@@ -1223,3 +1223,74 @@ header {
     font-size: 38px;
   }
 }
+
+.profile {
+  position: relative;
+  cursor: pointer;
+  user-select: none;
+}
+
+.user-menu {
+  position: absolute;
+  top: 54px;
+  right: 0;
+  z-index: 150;
+  width: 230px;
+  border-radius: 18px;
+  background: var(--surface);
+  box-shadow: var(--shadow-raised);
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.user-menu-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 4px 6px 10px;
+}
+
+.user-menu-head b {
+  display: block;
+  font-size: 13px;
+}
+
+.user-menu-head small {
+  color: var(--muted);
+  font-size: 10px;
+}
+
+.user-menu-divider {
+  height: 1px;
+  margin: 6px 0;
+  background: var(--line);
+}
+
+.user-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  border: 0;
+  border-radius: 12px;
+  background: transparent;
+  color: var(--ink);
+  text-align: left;
+  font-size: 13px;
+  padding: 10px 10px;
+}
+
+.user-menu-item:hover {
+  background: linear-gradient(145deg, #f5f7ff, #dde3f0);
+  box-shadow: var(--shadow-raised-soft);
+}
+
+.user-menu-item.danger {
+  color: var(--red);
+}
+
+.modal-box .section-title:first-of-type {
+  margin-top: 0;
+}

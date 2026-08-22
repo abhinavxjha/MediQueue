@@ -81,6 +81,10 @@ function renderNav() {
   document.querySelectorAll(".nav-btn").forEach(
     (b) =>
       (b.onclick = () => {
+        if (b.dataset.page === "profile") {
+          openProfileModal("edit");
+          return;
+        }
         active = b.dataset.page;
         renderNav();
         render();
@@ -326,6 +330,111 @@ async function adminPage(c) {
     c.innerHTML =
       '<div class="panel empty">Administrative management screen.</div>';
 }
+const SEX_LABELS = {
+  female: "Female",
+  male: "Male",
+  other: "Other",
+  prefer_not_to_say: "Prefer not to say",
+};
+const BLOOD_GROUPS = ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"];
+const PHONE_RE = /^[0-9+\-\s]{7,15}$/;
+async function openProfileModal(mode = "edit") {
+  let p = {};
+  try {
+    p = await api("/patient/profile");
+  } catch (e) {
+    p = {};
+  }
+  showModal(profileModalHTML(mode, p));
+}
+function profileModalHTML(mode, p) {
+  if (mode === "view") return profileViewHTML(p);
+  const title =
+    mode === "onboarding" ? "Complete Your Profile" : "Edit Profile";
+  const sub =
+    mode === "onboarding"
+      ? "Help us keep your MediQueue profile up to date."
+      : "Update your personal and contact information.";
+  const closeBtn =
+    mode === "onboarding"
+      ? ""
+      : `<button class="close" onclick="closeModal()">&times;</button>`;
+  return `${closeBtn}<h3>${title}</h3><p class="text-muted small">${sub}</p><div class="section-title" style="margin:18px 0 10px">Personal Information</div><div class="row g-3"><div class="col-md-6"><label class="small fw-bold">Full Name</label><input id="pfName" class="form-control" value="${esc(p.full_name || currentUser.name || "")}" required></div><div class="col-md-6"><label class="small fw-bold">Date of Birth</label><input id="pfDob" type="date" class="form-control" max="${new Date().toISOString().slice(0, 10)}" value="${esc(p.date_of_birth || "")}" required></div><div class="col-md-6"><label class="small fw-bold">Sex</label><select id="pfSex" class="form-control" required><option value="">Select</option>${Object.entries(SEX_LABELS).map(([v, l]) => `<option value="${v}" ${p.sex === v ? "selected" : ""}>${l}</option>`).join("")}</select></div><div class="col-md-6"><label class="small fw-bold">Blood Group</label><select id="pfBlood" class="form-control"><option value="">Unknown / Not specified</option>${BLOOD_GROUPS.map((v) => `<option value="${v}" ${p.blood_group === v ? "selected" : ""}>${v}</option>`).join("")}</select></div></div><div class="section-title" style="margin:18px 0 10px">Contact Information</div><div class="row g-3"><div class="col-12"><label class="small fw-bold">Phone Number</label><input id="pfPhone" class="form-control" value="${esc(p.phone || currentUser.phone || "")}" required></div><div class="col-12"><label class="small fw-bold">Address</label><input id="pfAddress" class="form-control" value="${esc(p.address || "")}"></div><div class="col-md-6"><label class="small fw-bold">City</label><input id="pfCity" class="form-control" value="${esc(p.city || "")}"></div></div><div class="section-title" style="margin:18px 0 10px">Emergency Contact</div><div class="row g-3"><div class="col-md-6"><label class="small fw-bold">Name</label><input id="pfEmName" class="form-control" value="${esc(p.emergency_contact_name || "")}"></div><div class="col-md-6"><label class="small fw-bold">Phone</label><input id="pfEmPhone" class="form-control" value="${esc(p.emergency_contact_phone || "")}"></div></div><button class="primary-btn mt-3" onclick="saveProfile('${mode}')">${mode === "onboarding" ? "Save &amp; Continue" : "Save Changes"}</button>`;
+}
+function profileViewHTML(p) {
+  const field = (label, value, wide) =>
+    `<div class="${wide ? "col-12" : "col-md-6"}"><label class="small fw-bold">${label}</label><div class="form-control profile-view-field" style="background:#f4f5f9;color:#3a3a4d;cursor:default;">${esc(value || "—")}</div></div>`;
+  return `<button class="close" onclick="closeModal()">&times;</button><h3>My Profile</h3><p class="text-muted small">Your saved personal and contact information.</p><div class="section-title" style="margin:18px 0 10px">Personal Information</div><div class="row g-3">${field("Full Name", p.full_name || currentUser.name)}${field("Date of Birth", p.date_of_birth)}${field("Sex", SEX_LABELS[p.sex] || p.sex)}${field("Blood Group", p.blood_group)}</div><div class="section-title" style="margin:18px 0 10px">Contact Information</div><div class="row g-3">${field("Phone Number", p.phone || currentUser.phone, true)}${field("Address", p.address, true)}${field("City", p.city)}</div><div class="section-title" style="margin:18px 0 10px">Emergency Contact</div><div class="row g-3">${field("Name", p.emergency_contact_name)}${field("Phone", p.emergency_contact_phone)}</div><button class="primary-btn mt-3" onclick="closeModal(); openProfileModal('edit')">Edit Profile</button>`;
+}
+async function saveProfile(mode) {
+  const name = $("#pfName").value.trim();
+  const dob = $("#pfDob").value;
+  const sex = $("#pfSex").value;
+  const phone = $("#pfPhone").value.trim();
+  const emPhone = $("#pfEmPhone").value.trim();
+  if (!name) return toast("Full name is required");
+  if (!dob) return toast("Date of birth is required");
+  if (new Date(dob) > new Date())
+    return toast("Date of birth cannot be in the future");
+  if (!sex) return toast("Please select your sex");
+  if (!PHONE_RE.test(phone)) return toast("Enter a valid phone number");
+  if (emPhone && !PHONE_RE.test(emPhone))
+    return toast("Enter a valid emergency contact phone");
+  const payload = {
+    full_name: name,
+    date_of_birth: dob,
+    sex,
+    blood_group: $("#pfBlood").value || null,
+    phone,
+    address: $("#pfAddress").value.trim() || null,
+    city: $("#pfCity").value.trim() || null,
+    emergency_contact_name: $("#pfEmName").value.trim() || null,
+    emergency_contact_phone: emPhone || null,
+  };
+  try {
+    await api("/patient/profile", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
+    if (currentUser.name !== name || currentUser.phone !== phone) {
+      currentUser.name = name;
+      currentUser.phone = phone;
+      localStorage.setItem("mq_user", JSON.stringify(currentUser));
+      $("#userName").textContent = name;
+      $("#avatar").textContent = name[0].toUpperCase();
+    }
+    closeModal();
+    toast(mode === "onboarding" ? "Profile completed" : "Profile updated");
+    render();
+  } catch (e) {
+    toast(e.message);
+  }
+}
+function toggleUserMenu(e) {
+  e.stopPropagation();
+  const existing = document.getElementById("userMenu");
+  if (existing) {
+    existing.remove();
+    return;
+  }
+  const menu = document.createElement("div");
+  menu.id = "userMenu";
+  menu.className = "user-menu";
+  menu.innerHTML = `<div class="user-menu-head"><div class="avatar">${esc(currentUser.name[0].toUpperCase())}</div><div><b>${esc(currentUser.name)}</b><small>${esc(currentUser.role[0].toUpperCase() + currentUser.role.slice(1))}</small></div></div><div class="user-menu-divider"></div><button class="user-menu-item" onclick="closeUserMenuAnd(function(){openProfileModal('view')})"><i class="bi bi-person"></i> My Profile</button><div class="user-menu-divider"></div><button class="user-menu-item danger" onclick="doLogout()"><i class="bi bi-box-arrow-left"></i> Logout</button>`;
+  $(".profile").appendChild(menu);
+  document.addEventListener("click", closeUserMenuOnce, { once: true });
+}
+function closeUserMenuOnce() {
+  document.getElementById("userMenu")?.remove();
+}
+function closeUserMenuAnd(fn) {
+  document.getElementById("userMenu")?.remove();
+  fn();
+}
+function doLogout() {
+  localStorage.clear();
+  location.reload();
+}
 function showModal(html) {
   let x = document.createElement("div");
   x.id = "modal";
@@ -355,10 +464,16 @@ window.completePatient = completePatient;
 window.finishConsult = finishConsult;
 window.addSlot = addSlot;
 window.closeModal = closeModal;
+window.openProfileModal = openProfileModal;
+window.saveProfile = saveProfile;
+window.toggleUserMenu = toggleUserMenu;
+window.closeUserMenuAnd = closeUserMenuAnd;
+window.doLogout = doLogout;
 $("#logout").onclick = () => {
   localStorage.clear();
   location.reload();
 };
+$(".profile").onclick = toggleUserMenu;
 document.querySelectorAll(".tabs button").forEach(
   (b) =>
     (b.onclick = () => {
@@ -413,6 +528,7 @@ $("#registerForm").onsubmit = async (e) => {
     showApp();
     renderNav();
     render();
+    if (currentUser.role === "patient") openProfileModal("onboarding");
   } catch (e) {
     toast(e.message);
   }
