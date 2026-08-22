@@ -50,16 +50,16 @@ def _save(payload: PatientProfileIn, user: User, db: Session) -> PatientProfileO
 
 
 @router.get('/profile', response_model=PatientProfileOut)
-def get_profile(user: User = Depends(require_roles('patient')), db: Session = Depends(get_db)):
+def get_profile(user: User = Depends(require_roles('patient', 'doctor', 'admin')), db: Session = Depends(get_db)):
     profile = db.scalar(select(PatientProfile).where(PatientProfile.user_id == user.id))
     return _to_out(user, profile)
 
 
 @router.post('/profile', response_model=PatientProfileOut)
-def create_or_update_profile(payload: PatientProfileIn, user: User = Depends(require_roles('patient')), db: Session = Depends(get_db)):
+def create_or_update_profile(payload: PatientProfileIn, user: User = Depends(require_roles('patient', 'doctor', 'admin')), db: Session = Depends(get_db)):
     return _save(payload, user, db)
 
 
 @router.put('/profile', response_model=PatientProfileOut)
-def update_profile(payload: PatientProfileIn, user: User = Depends(require_roles('patient')), db: Session = Depends(get_db)):
+def update_profile(payload: PatientProfileIn, user: User = Depends(require_roles('patient', 'doctor', 'admin')), db: Session = Depends(get_db)):
     return _save(payload, user, db)

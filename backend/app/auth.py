@@ -36,7 +36,13 @@ def get_current_user(token: str = Depends(oauth2), db: Session = Depends(get_db)
 
 def require_roles(*roles):
     def dependency(user: User = Depends(get_current_user)):
-        if user.role not in roles:
+        allowed = []
+        for r in roles:
+            if isinstance(r, (list, tuple)):
+                allowed.extend([str(item).strip().lower() for item in r])
+            else:
+                allowed.append(str(r).strip().lower())
+        if not user or not user.role or user.role.strip().lower() not in allowed:
             raise HTTPException(status_code=403, detail='Insufficient permissions')
         return user
     return dependency

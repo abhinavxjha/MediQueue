@@ -13,6 +13,12 @@ const esc = (s) =>
         m
       ],
   );
+function getLocalDateStr(d = new Date()) {
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
 async function api(path, opts = {}) {
   opts.headers = {
     "Content-Type": "application/json",
@@ -23,6 +29,14 @@ async function api(path, opts = {}) {
   let data = await r
     .json()
     .catch(() => ({ detail: "Server returned an invalid response" }));
+  if (r.status === 401 || r.status === 403) {
+    localStorage.clear();
+    token = null;
+    currentUser = null;
+    boot();
+    toast(data.detail || "Session expired or access denied. Please sign in again.");
+    throw new Error(data.detail || "Session expired. Please sign in again.");
+  }
   if (!r.ok) throw new Error(data.detail || "Request failed");
   return data;
 }
@@ -66,12 +80,19 @@ function renderNav() {
             ["appointments", "calendar-check", "Appointments"],
             ["slots", "clock", "Manage Slots"],
           ]
-        : [
-            ["dashboard", "grid-1x2", "Dashboard"],
-            ["doctors", "person-badge", "Doctors"],
-            ["analytics", "bar-chart-line", "Analytics"],
-            ["appointments", "calendar-check", "Appointments"],
-          ];
+        : currentUser.role === "hospital"
+          ? [
+              ["dashboard", "speedometer2", "Hospital Console"],
+              ["doctors", "calendar3", "Doctor Schedule"],
+              ["timelogs", "stopwatch", "Patient Timestamps"],
+            ]
+          : [
+              ["dashboard", "grid-1x2", "Dashboard"],
+              ["hospital_desk", "hospital", "Hospital Desk"],
+              ["doctors", "person-badge", "Doctors"],
+              ["analytics", "bar-chart-line", "Analytics"],
+              ["appointments", "calendar-check", "Appointments"],
+            ];
   $("#nav").innerHTML = items
     .map(
       ([id, icon, label]) =>
@@ -95,10 +116,11 @@ async function render() {
   const c = $("#content");
   clearInterval(temporaryAppointmentTimer);
   temporaryAppointmentTimer = null;
-  c.innerHTML = '<div class="empty">Loading MediQueue...</div>';
+  c.innerHTML = '<div class="empty">Loading Querly...</div>';
   try {
     if (currentUser.role === "patient") await patientPage(c);
     else if (currentUser.role === "doctor") await doctorPage(c);
+    else if (currentUser.role === "hospital" || active === "hospital_desk") await hospitalPage(c);
     else await adminPage(c);
   } catch (e) {
     c.innerHTML = `<div class="panel empty"><i class="bi bi-exclamation-triangle"></i><br>${esc(e.message)}</div>`;
@@ -139,9 +161,198 @@ async function downloadReport(id) {
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
   link.href = url;
-  link.download = `mediqueue-report-${id}.pdf`;
+  link.download = `querly-report-${id}.pdf`;
   link.click();
   URL.revokeObjectURL(url);
+}
+function renderSineWaveQueueHTML(queue, next) {
+  if (!queue && !next) return '<div class="sine-queue-card"><div class="empty">No active queue. Book an appointment first.</div></div>';
+  
+  const token = queue?.token || next?.token || "T-001";
+  const nowServing = queue?.now_serving || (next?.status === 'called' ? token : null) || "—";
+  const pos = queue?.position ?? 1;
+  const status = queue?.status || next?.status || "booked";
+  const waitMin = queue?.waiting_minutes ?? next?.waiting_minutes ?? "—";
+  const dept = esc(next?.department || "General OPD");
+  const doctor = esc(next?.doctor || "Attending Specialist");
+
+  const userIndex = Math.max(1, pos);
+  let servingIndex = 1;
+  if (nowServing !== "—" && token.includes("-") && nowServing.includes("-")) {
+    const userNum = parseInt(token.split("-")[1], 10) || pos;
+    const servNum = parseInt(nowServing.split("-")[1], 10) || 1;
+    servingIndex = Math.max(1, userIndex - (userNum - servNum));
+  } else if (status === "called") {
+    servingIndex = userIndex;
+  } else if (userIndex > 1) {
+    servingIndex = userIndex - 1;
+  }
+
+  // Both crests and troughs represent tickets before and up to user appointment
+  const totalTickets = Math.max(7, userIndex + 2);
+  const width = 840;
+  const height = 160;
+  const cy = 80;        // center horizontal axis
+  const amplitude = 28; // low amplitude for sleek executive presentation
+  const startX = 45;
+  const endX = width - 45;
+  const ticketStep = (endX - startX) / (totalTickets - 1);
+
+  // Generate a mathematically perfect continuous sine wave path
+  let pathD = `M 0,${(cy - amplitude).toFixed(1)} `;
+  for (let px = 0; px <= width; px += 4) {
+    const angle = ((px - startX) / ticketStep) * Math.PI;
+    const py = cy - amplitude * Math.cos(angle);
+    pathD += `L ${px.toFixed(1)},${py.toFixed(1)} `;
+  }
+
+  let nodes = [];
+  for (let i = 0; i < totalTickets; i++) {
+    const ticketIdx = i + 1;
+    const xNode = startX + i * ticketStep;
+    const isCrest = i % 2 === 0;
+    const yNode = isCrest ? (cy - amplitude) : (cy + amplitude);
+
+    let ticketTokenNum = `T-0${ticketIdx}`;
+    if (token.includes("-")) {
+      const parts = token.split("-");
+      const prefix = parts[0];
+      const baseNum = parseInt(parts[1], 10) || pos;
+      const calcNum = baseNum - (userIndex - ticketIdx);
+      if (calcNum > 0) {
+        ticketTokenNum = `${prefix}-${String(calcNum).padStart(3, '0')}`;
+      }
+    }
+
+    const state = (ticketIdx < servingIndex)
+      ? "completed"
+      : (ticketIdx === servingIndex)
+        ? "blinking"
+        : (ticketIdx === userIndex)
+          ? "user"
+          : "upcoming";
+
+    nodes.push({
+      index: ticketIdx,
+      x: xNode,
+      y: yNode,
+      isCrest,
+      token: ticketTokenNum,
+      state
+    });
+  }
+
+  let svgNodes = "";
+  let overlayBadges = "";
+
+  nodes.forEach(pt => {
+    const xPct = (pt.x / width) * 100;
+    const labelY = pt.isCrest ? (pt.y - 16) : (pt.y + 24);
+    const labelColor = pt.state === "completed" ? "#045e6b" : (pt.state === "blinking" ? "#068394" : (pt.state === "user" ? "#068394" : "#94a3b8"));
+    const labelWeight = pt.state === "user" ? "800" : "700";
+
+    if (pt.state === "completed") {
+      svgNodes += `
+        <circle cx="${pt.x}" cy="${pt.y}" r="11" fill="#068394" stroke="#ffffff" stroke-width="3" filter="drop-shadow(0 2px 6px rgba(6,131,148,0.4))" />
+        <path d="M ${pt.x - 4} ${pt.y} L ${pt.x - 1} ${pt.y + 3} L ${pt.x + 5} ${pt.y - 3}" fill="none" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
+        <text x="${pt.x}" y="${labelY}" text-anchor="middle" fill="${labelColor}" font-size="11" font-weight="${labelWeight}">${pt.token}</text>
+      `;
+    } else if (pt.state === "blinking") {
+      svgNodes += `
+        <circle cx="${pt.x}" cy="${pt.y}" r="18" fill="none" stroke="#0ab8d0" stroke-width="2">
+          <animate attributeName="r" values="12;28;12" dur="2s" repeatCount="indefinite"/>
+          <animate attributeName="opacity" values="0.9;0;0.9" dur="2s" repeatCount="indefinite"/>
+        </circle>
+        <circle cx="${pt.x}" cy="${pt.y}" r="12" fill="#0ab8d0" stroke="#045e6b" stroke-width="3.5" filter="drop-shadow(0 0 12px #068394)">
+          <animate attributeName="r" values="10;14;10" dur="1.5s" repeatCount="indefinite"/>
+        </circle>
+        <text x="${pt.x}" y="${labelY}" text-anchor="middle" fill="${labelColor}" font-size="11" font-weight="800">${pt.token}</text>
+      `;
+      const badgeTop = pt.isCrest ? ((pt.y / height) * 100 - 22) : ((pt.y / height) * 100 - 22);
+      overlayBadges += `
+        <div class="token-floating-badge" style="left:${xPct}%; top:${badgeTop}%;">
+          <span class="token-lbl">NOW SERVING</span>
+          <span class="token-num">${pt.token}</span>
+        </div>
+      `;
+    } else if (pt.state === "user") {
+      svgNodes += `
+        <circle cx="${pt.x}" cy="${pt.y}" r="12" fill="#08a2b7" stroke="#ffffff" stroke-width="3.5" filter="drop-shadow(0 4px 10px rgba(8,162,183,0.6))" />
+        <text x="${pt.x}" y="${labelY}" text-anchor="middle" fill="${labelColor}" font-size="11" font-weight="800">${pt.token}</text>
+      `;
+      const badgeTop = pt.isCrest ? ((pt.y / height) * 100 + 16) : ((pt.y / height) * 100 - 26);
+      overlayBadges += `
+        <div class="user-token-floating-badge" style="left:${xPct}%; top:${badgeTop}%;">
+          <i class="bi bi-person-fill"></i> YOUR TOKEN (${token})
+        </div>
+      `;
+    } else {
+      svgNodes += `
+        <circle cx="${pt.x}" cy="${pt.y}" r="8" fill="#ffffff" stroke="#94a3b8" stroke-width="2" stroke-dasharray="3,3" />
+        <text x="${pt.x}" y="${labelY}" text-anchor="middle" fill="${labelColor}" font-size="10" font-weight="600">${pt.token}</text>
+      `;
+    }
+  });
+
+  return `
+    <div class="sine-queue-card">
+      <div class="sine-header">
+        <div class="sine-title-wrap">
+          <h4><i class="bi bi-activity"></i> Live Sine-Wave Queue Tracker</h4>
+          <p>${dept} · ${doctor}</p>
+        </div>
+        <div class="sine-badge-now">
+          <i class="bi bi-broadcast"></i> Live Updates
+        </div>
+      </div>
+
+      <div class="sine-wave-wrapper">
+        <svg class="sine-wave-svg" viewBox="0 0 ${width} ${height}" preserveAspectRatio="xMidYMid meet">
+          <defs>
+            <linearGradient id="sineTealGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" stop-color="#068394" />
+              <stop offset="50%" stop-color="#0ab8d0" />
+              <stop offset="100%" stop-color="#94a3b8" />
+            </linearGradient>
+            <filter id="sineGlow" x="-20%" y="-20%" width="140%" height="140%">
+              <feGaussianBlur stdDeviation="3" result="blur" />
+              <feComposite in="SourceGraphic" in2="blur" operator="over" />
+            </filter>
+          </defs>
+          
+          <path d="${pathD}" fill="none" stroke="rgba(13,148,136,0.15)" stroke-width="8" stroke-linecap="round" />
+          <path d="${pathD}" fill="none" stroke="url(#sineTealGradient)" stroke-width="4" stroke-linecap="round" filter="url(#sineGlow)" />
+          ${svgNodes}
+        </svg>
+        ${overlayBadges}
+      </div>
+
+      <div class="sine-legend">
+        <div class="sine-legend-item">
+          <div class="sine-legend-dot completed"></div>
+          <span>Completed Tickets</span>
+        </div>
+        <div class="sine-legend-item">
+          <div class="sine-legend-dot blinking"></div>
+          <span>Currently Serving (In Progress)</span>
+        </div>
+        <div class="sine-legend-item">
+          <div class="sine-legend-dot user"></div>
+          <span>Your Ticket</span>
+        </div>
+        <div class="sine-legend-item">
+          <div class="sine-legend-dot upcoming"></div>
+          <span>Upcoming Tickets</span>
+        </div>
+      </div>
+
+      <div class="d-flex justify-content-between align-items-center mt-3 pt-3 border-top" style="font-size:12px;color:var(--muted)">
+        <span><i class="bi bi-people"></i> Position in line: <b style="color:var(--primary-dark)">${pos === 1 ? "Next in line!" : pos + " patients ahead"}</b></span>
+        <span><i class="bi bi-clock-history"></i> Estimated wait: <b style="color:var(--primary-dark)">${waitMin} min</b></span>
+        <span><i class="bi bi-ticket-perforated"></i> Your Token: <b style="color:var(--primary-dark)">${esc(token)}</b></span>
+      </div>
+    </div>
+  `;
 }
 async function patientPage(c) {
   if (active === "dashboard") {
@@ -150,7 +361,7 @@ async function patientPage(c) {
       ["booked", "checked_in", "called"].includes(x.status),
     );
     const queue = next ? await api("/patient/queue/" + next.id) : null;
-    c.innerHTML = `<div class="hero"><div><h1>Good Morning, ${esc(d.patient.name)}! 👋</h1><p>We're here to make your visit smooth and hassle-free.</p></div><div class="hero-art"><i class="bi bi-hospital"></i></div></div><div class="cards"><div class="action-card" onclick="go('appointments')"><i class="bi bi-clock-history"></i><h3>My Appointments</h3><p>See your upcoming visits</p></div><div class="action-card" onclick="go('book')"><i class="bi bi-calendar-plus"></i><h3>Book Appointment</h3><p>Find doctors & book your slot</p></div><div class="action-card" onclick="go('history')"><i class="bi bi-clock-history"></i><h3>Medical History</h3><p>Review completed consultations</p></div></div><div class="section-title">Today's Overview</div><div class="stats"><div class="stat-card"><span>Your Token Number</span><strong>${next?.token || "—"}</strong><div class="trend">Smart queue</div></div><div class="stat-card"><span>Estimated Waiting Time</span><strong>${next?.waiting_minutes ?? "—"} ${next ? "min" : ""}</strong><div class="trend">Updated live</div></div><div class="stat-card"><span>Appointment Status</span><strong style="font-size:18px;margin-top:12px">${next ? next.status.replace("_", " ") : "No visit"}</strong><div class="trend">Digital check-in</div></div><div class="stat-card"><span>Appointments</span><strong>${d.appointments.length}</strong><div class="trend">History & upcoming</div></div></div><div class="section-title">Live Queue</div><div class="queue-live">${queue ? `<div style="color:var(--muted);font-size:12px">${esc(next.department)} · ${esc(next.doctor)}</div><div class="queue-number">${esc(queue.token || next.token)}</div><div style="margin:10px 0 20px">${queue.position ?? "—"} patients position · ${queue.waiting_minutes ?? "—"} min estimated wait</div><div class="progress-line"><span style="width:${Math.max(8, 100 - Math.min((queue.position || 1) * 8, 92))}%"></span></div><div class="d-flex justify-content-between mt-3" style="font-size:11px;color:var(--muted)"><span>Now serving: <b>${queue.now_serving || "—"}</b></span><span>Status: <b>${queue.status}</b></span></div>` : "No active queue. Book an appointment first."}</div>`;
+    c.innerHTML = `<div class="hero"><div><h1>Good Morning, ${esc(d.patient.name)}! 👋</h1><p>We're here to make your visit smooth and hassle-free.</p></div><div class="hero-art"><i class="bi bi-hospital"></i></div></div><div class="cards"><div class="action-card" onclick="go('appointments')"><i class="bi bi-clock-history"></i><h3>My Appointments</h3><p>See your upcoming visits</p></div><div class="action-card" onclick="go('book')"><i class="bi bi-calendar-plus"></i><h3>Book Appointment</h3><p>Find doctors & book your slot</p></div><div class="action-card" onclick="go('history')"><i class="bi bi-clock-history"></i><h3>Medical History</h3><p>Review completed consultations</p></div></div><div class="section-title">Today's Overview</div><div class="stats"><div class="stat-card"><span>Your Token Number</span><strong>${next?.token || "—"}</strong><div class="trend">Smart queue</div></div><div class="stat-card"><span>Estimated Waiting Time</span><strong>${next?.waiting_minutes ?? "—"} ${next ? "min" : ""}</strong><div class="trend">Updated live</div></div><div class="stat-card"><span>Appointment Status</span><strong style="font-size:18px;margin-top:12px">${next ? next.status.replace("_", " ") : "No visit"}</strong><div class="trend">Digital check-in</div></div><div class="stat-card"><span>Appointments</span><strong>${d.appointments.length}</strong><div class="trend">History & upcoming</div></div></div><div class="section-title">Live Queue</div>${renderSineWaveQueueHTML(queue, next)}`;
   } else if (active === "book" || active === "doctors") {
     await renderBooking(c);
   } else if (active === "hospitals") {
@@ -174,7 +385,7 @@ async function patientPage(c) {
       return;
     }
     const q = await api("/patient/queue/" + a.id);
-    c.innerHTML = `<div class="section-title">Live Queue</div><div class="queue-live"><div style="color:var(--muted);font-size:12px">${esc(a.department)} · ${esc(a.doctor)}</div><div class="queue-number">${esc(q.token || a.token)}</div><div style="margin:10px 0 20px">${q.position ?? "—"} patients position · ${q.waiting_minutes ?? "—"} min estimated wait</div><div class="progress-line"><span style="width:${Math.max(8, 100 - Math.min((q.position || 1) * 8, 92))}%"></span></div><div class="d-flex justify-content-between mt-3" style="font-size:11px;color:var(--muted)"><span>Now serving: <b>${q.now_serving || "—"}</b></span><span>Status: <b>${q.status}</b></span></div>${a.status === "booked" ? `<button class="primary-btn" style="max-width:250px" onclick="checkIn(${a.id})">Check In</button>` : ""}</div>`;
+    c.innerHTML = `<div class="section-title">Live Queue</div>${renderSineWaveQueueHTML(q, a)}${a.status === "booked" ? `<button class="primary-btn mt-3" style="max-width:250px" onclick="checkIn(${a.id})">Check In</button>` : ""}`;
   } else {
     c.innerHTML = `<div class="panel empty">${esc(active)} is ready for the next module.</div>`;
   }
@@ -186,7 +397,7 @@ async function renderBooking(c, departmentId = null) {
 async function renderHospitals(c) {
   c.innerHTML = '<div class="section-title">Hospitals Near You</div><div class="panel empty">Finding hospitals near your location...</div>';
   const hospitals = await api("/patient/hospitals");
-  c.innerHTML = `<div class="section-title">Hospitals Near You</div><div class="hospital-toolbar"><div><h2>Find trusted care nearby</h2><p>Browse departments and doctors connected to the MediQueue catalog.</p></div></div><div class="hospital-grid">${hospitals.map((hospital) => { const doctorCount = hospital.departments.reduce((count, department) => count + department.doctors.length, 0); return `<article class="hospital-card"><div class="hospital-icon"><i class="bi bi-hospital"></i></div><div class="hospital-card-body"><div class="hospital-card-heading"><h3>${esc(hospital.name)}</h3><span class="hospital-rating">${esc(hospital.city)}</span></div><p class="hospital-address"><i class="bi bi-geo-alt"></i> ${esc(hospital.address)}</p><div class="hospital-meta"><span><i class="bi bi-people"></i> ${doctorCount} doctors</span><span>${hospital.departments.length} departments</span></div><div class="hospital-departments">${hospital.departments.map((department) => `<button class="btn btn-sm btn-outline-primary" onclick="goToDepartment(${department.id})">${esc(department.name)} (${department.doctors.length})</button>`).join("")}</div><a class="hospital-directions" href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(hospital.name + " " + hospital.address)}" target="_blank" rel="noopener"><i class="bi bi-arrow-up-right"></i> Get directions</a><small>${esc(hospital.phone || "")} · ${esc(hospital.email || "")}</small></div></article>`; }).join("")}</div>`;
+  c.innerHTML = `<div class="section-title">Hospitals Near You</div><div class="hospital-toolbar"><div><h2>Find trusted care nearby</h2><p>Browse departments and doctors connected to the Querly catalog.</p></div></div><div class="hospital-grid">${hospitals.map((hospital) => { const doctorCount = hospital.departments.reduce((count, department) => count + department.doctors.length, 0); return `<article class="hospital-card"><div class="hospital-icon"><i class="bi bi-hospital"></i></div><div class="hospital-card-body"><div class="hospital-card-heading"><h3>${esc(hospital.name)}</h3><span class="hospital-rating">${esc(hospital.city)}</span></div><p class="hospital-address"><i class="bi bi-geo-alt"></i> ${esc(hospital.address)}</p><div class="hospital-meta"><span><i class="bi bi-people"></i> ${doctorCount} doctors</span><span>${hospital.departments.length} departments</span></div><div class="hospital-departments">${hospital.departments.map((department) => `<button class="btn btn-sm btn-outline-primary" onclick="goToDepartment(${department.id})">${esc(department.name)} (${department.doctors.length})</button>`).join("")}</div><a class="hospital-directions" href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(hospital.name + " " + hospital.address)}" target="_blank" rel="noopener"><i class="bi bi-arrow-up-right"></i> Get directions</a><small>${esc(hospital.phone || "")} · ${esc(hospital.email || "")}</small></div></article>`; }).join("")}</div>`;
 }
 function goToDepartment(departmentId) {
   active = "doctors";
@@ -194,7 +405,7 @@ function goToDepartment(departmentId) {
   renderBooking($("#content"), departmentId);
 }
 async function chooseDoctor(id, name) {
-  const dateStr = new Date().toISOString().slice(0, 10);
+  const dateStr = getLocalDateStr();
   const slots = await api(
     `/patient/slots?doctor_id=${id}&selected_date=${dateStr}`,
   );
@@ -234,7 +445,7 @@ async function checkIn(id) {
 async function openSlip(id) {
   const d = await api("/patient/eslip/" + id);
   showModal(
-    `<button class="close" onclick="closeModal()">×</button><div class="eslip"><div class="d-flex justify-content-between"><div><span class="eyebrow">MEDIQUEUE E-SLIP</span><h3>${esc(d.token)}</h3><p>${esc(d.patient)} · ${esc(d.doctor)}</p></div><img class="qr" src="${d.qr}" alt="QR code"></div><hr><div class="row g-3 small"><div class="col-6"><b>Hospital</b><br>${esc(d.hospital)}</div><div class="col-6"><b>OPD</b><br>${esc(d.department)}</div><div class="col-6"><b>Date</b><br>${d.date}</div><div class="col-6"><b>Time</b><br>${d.time}</div><div class="col-6"><b>Consultation Fee</b><br>₹${d.fee}</div><div class="col-6"><b>Status</b><br>${d.status}</div></div><button class="primary-btn" onclick="downloadSlip(${id})">Download PDF E-Slip</button></div>`,
+    `<button class="close" onclick="closeModal()">×</button><div class="eslip"><div class="d-flex justify-content-between"><div><span class="eyebrow">QUERLY E-SLIP</span><h3>${esc(d.token)}</h3><p>${esc(d.patient)} · ${esc(d.doctor)}</p></div><img class="qr" src="${d.qr}" alt="QR code"></div><hr><div class="row g-3 small"><div class="col-6"><b>Hospital</b><br>${esc(d.hospital)}</div><div class="col-6"><b>OPD</b><br>${esc(d.department)}</div><div class="col-6"><b>Date</b><br>${d.date}</div><div class="col-6"><b>Time</b><br>${d.time}</div><div class="col-6"><b>Consultation Fee</b><br>₹${d.fee}</div><div class="col-6"><b>Status</b><br>${d.status}</div></div><button class="primary-btn" onclick="downloadSlip(${id})">Download PDF E-Slip</button></div>`,
   );
 }
 async function downloadSlip(id) {
@@ -249,7 +460,7 @@ async function downloadSlip(id) {
     url = URL.createObjectURL(blob),
     a = document.createElement("a");
   a.href = url;
-  a.download = `mediqueue-eslip-${id}.pdf`;
+  a.download = `querly-eslip-${id}.pdf`;
   a.click();
   URL.revokeObjectURL(url);
 }
@@ -264,7 +475,7 @@ async function doctorPage(c) {
     const a = await api("/doctor/appointments");
     c.innerHTML = `<div class="section-title">Appointments</div><div class="panel">${queueTable(a, false)}</div>`;
   } else if (active === "slots") {
-    c.innerHTML = `<div class="section-title">Manage Slots</div><div class="panel"><div class="row g-3"><div class="col-md-4"><label class="small fw-bold">Date</label><input id="slotDate" class="form-control" type="date" value="${new Date().toISOString().slice(0, 10)}"></div><div class="col-md-3"><label class="small fw-bold">Start</label><input id="slotStart" class="form-control" type="time" value="10:00"></div><div class="col-md-3"><label class="small fw-bold">End</label><input id="slotEnd" class="form-control" type="time" value="10:30"></div><div class="col-md-2"><label class="small fw-bold">Capacity</label><input id="slotCap" class="form-control" type="number" value="10"></div></div><button class="primary-btn" style="width:auto" onclick="addSlot()">Create Slot</button></div>`;
+    c.innerHTML = `<div class="section-title">Manage Slots</div><div class="panel"><div class="row g-3"><div class="col-md-4"><label class="small fw-bold">Date</label><input id="slotDate" class="form-control" type="date" value="${getLocalDateStr()}"></div><div class="col-md-3"><label class="small fw-bold">Start</label><input id="slotStart" class="form-control" type="time" value="10:00"></div><div class="col-md-3"><label class="small fw-bold">End</label><input id="slotEnd" class="form-control" type="time" value="10:30"></div><div class="col-md-2"><label class="small fw-bold">Capacity</label><input id="slotCap" class="form-control" type="number" value="10"></div></div><button class="primary-btn" style="width:auto" onclick="addSlot()">Create Slot</button></div>`;
   } else
     c.innerHTML = '<div class="panel empty">Profile management module.</div>';
 }
@@ -353,7 +564,7 @@ function profileModalHTML(mode, p) {
     mode === "onboarding" ? "Complete Your Profile" : "Edit Profile";
   const sub =
     mode === "onboarding"
-      ? "Help us keep your MediQueue profile up to date."
+      ? "Help us keep your Querly profile up to date."
       : "Update your personal and contact information.";
   const closeBtn =
     mode === "onboarding"
@@ -533,4 +744,289 @@ $("#registerForm").onsubmit = async (e) => {
     toast(e.message);
   }
 };
+window.cachedHospitalDoctors = [];
+
+async function hospitalPage(c) {
+  if (active === "dashboard" || active === "queue" || active === "hospital_desk") {
+    const overview = await api("/hospital/overview");
+    const queue = await api("/hospital/queue");
+    const doctors = await api("/hospital/doctors");
+    window.cachedHospitalDoctors = doctors;
+
+    c.innerHTML = `
+      <div class="hero">
+        <h1><i class="bi bi-hospital"></i> Hospital Management & OPD Console</h1>
+        <p>Manage live OPD patient queues, record ongoing and completed consultation timestamps, and control doctor weekly availability.</p>
+      </div>
+
+      <div class="stats mb-4">
+        <div class="stat-card">
+          <span>Patients Waiting</span>
+          <strong style="color:var(--orange)">${overview.queue_stats.waiting}</strong>
+        </div>
+        <div class="stat-card">
+          <span>Ongoing Consultations</span>
+          <strong style="color:var(--primary)" class="blinking-text">${overview.queue_stats.ongoing}</strong>
+        </div>
+        <div class="stat-card">
+          <span>Completed Today</span>
+          <strong style="color:var(--green)">${overview.queue_stats.completed}</strong>
+        </div>
+        <div class="stat-card">
+          <span>Real-time Avg Consultation</span>
+          <strong style="color:var(--primary-dark)">${overview.queue_stats.avg_duration_minutes} min</strong>
+        </div>
+      </div>
+
+      <div class="section-title">Live OPD Patient Queue Management</div>
+      <div class="panel">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <div class="d-flex gap-2 align-items-center">
+            <label class="small fw-bold me-1">Filter Doctor:</label>
+            <select id="hospFilterDoctor" class="form-select form-select-sm" style="width:220px;display:inline-block" onchange="renderHospitalFilteredQueue()">
+              <option value="">All Doctors</option>
+              ${doctors.map(d => `<option value="${d.id}">${esc(d.name)} (${esc(d.department_name)})</option>`).join("")}
+            </select>
+          </div>
+          <button class="primary-btn" style="width:auto;margin:0;padding:8px 16px;font-size:13px" onclick="render()"><i class="bi bi-arrow-clockwise"></i> Refresh OPD Status</button>
+        </div>
+
+        <div class="table-responsive">
+          <table class="table align-middle">
+            <thead>
+              <tr>
+                <th>Token</th>
+                <th>Patient</th>
+                <th>Doctor</th>
+                <th>Checked In</th>
+                <th>Ongoing Start</th>
+                <th>Completed Finish</th>
+                <th>Duration</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="hospQueueTbody">
+              ${renderHospTableRows(queue)}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    `;
+  } else if (active === "doctors") {
+    const doctors = await api("/hospital/doctors");
+    window.cachedHospitalDoctors = doctors;
+
+    const dayLabels = {
+      monday: "Mon", tuesday: "Tue", wednesday: "Wed",
+      thursday: "Thu", friday: "Fri", saturday: "Sat", sunday: "Sun"
+    };
+
+    c.innerHTML = `
+      <div class="section-title"><i class="bi bi-calendar3"></i> Doctor Availability & Weekly Working Schedule</div>
+      <div class="panel">
+        <p class="text-muted small mb-4">Set which days of the week each doctor is available for appointments. Changes dynamically update appointment slot availability for patients.</p>
+        <div class="row g-4">
+          ${doctors.map(d => {
+            const sched = d.weekly_schedule || { monday: true, tuesday: true, wednesday: true, thursday: true, friday: true, saturday: true, sunday: false };
+            return `
+              <div class="col-md-6">
+                <div class="card p-3 shadow-sm border-0" style="border-radius:16px;background:var(--surface);border:1px solid var(--line)!important">
+                  <div class="d-flex justify-content-between align-items-center mb-2">
+                    <div>
+                      <h5 class="mb-0 fw-bold" style="color:var(--primary-dark)">${esc(d.name)}</h5>
+                      <small class="text-muted">${esc(d.specialization)} · ${esc(d.department_name)}</small>
+                    </div>
+                    <div class="form-check form-switch">
+                      <input class="form-check-input" type="checkbox" id="avail_${d.id}" ${d.is_available ? 'checked' : ''} onchange="toggleDoctorMaster(${d.id})">
+                      <label class="form-check-label fw-bold small ms-1" for="avail_${d.id}">${d.is_available ? '<span class="text-success">Available</span>' : '<span class="text-danger">Off-Duty</span>'}</label>
+                    </div>
+                  </div>
+                  <div class="mb-3 p-2 rounded" style="background:var(--surface-soft);font-size:12px">
+                    <span class="text-muted">Avg OPD Consultation Duration:</span> <b style="color:var(--primary-dark)">${d.avg_consultation_time_min} mins/patient</b>
+                  </div>
+                  <label class="small fw-bold mb-2">Working Days Schedule</label>
+                  <div class="d-flex flex-wrap gap-1 mb-3">
+                    ${Object.keys(dayLabels).map(day => `
+                      <button class="btn btn-sm ${sched[day] ? 'btn-teal' : 'btn-outline-secondary'}" style="font-size:12px;padding:4px 10px;border-radius:8px" onclick="toggleDoctorDay(${d.id}, '${day}')">
+                        ${dayLabels[day]} ${sched[day] ? '✓' : '✗'}
+                      </button>
+                    `).join("")}
+                  </div>
+                  <button class="primary-btn mt-2" style="padding:10px 16px;font-size:13px;width:100%" onclick="saveDoctorSchedule(${d.id})">Save Schedule & Availability</button>
+                </div>
+              </div>
+            `;
+          }).join("")}
+        </div>
+      </div>
+    `;
+  } else if (active === "timelogs") {
+    const logs = await api("/hospital/logs");
+    c.innerHTML = `
+      <div class="section-title"><i class="bi bi-stopwatch"></i> Patient Consultation Timestamps & Duration Logs</div>
+      <div class="panel">
+        <p class="text-muted small mb-3">Exact check-in, ongoing consultation start times, and completed finish times recorded by hospital desk staff.</p>
+        <div class="table-responsive">
+          <table class="table align-middle">
+            <thead>
+              <tr>
+                <th>Token</th>
+                <th>Patient</th>
+                <th>Doctor</th>
+                <th>Check-In Time</th>
+                <th>Ongoing Start Time</th>
+                <th>Completed Finish Time</th>
+                <th>Wait Time</th>
+                <th>Consultation Duration</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${logs.map(l => `
+                <tr>
+                  <td><b class="token-pill">${esc(l.token_no)}</b></td>
+                  <td><b>${esc(l.patient_name)}</b></td>
+                  <td>${esc(l.doctor_name)}</td>
+                  <td><small>${l.checked_in_time}</small></td>
+                  <td><small class="fw-bold" style="color:var(--primary)">${l.ongoing_start_time}</small></td>
+                  <td><small class="text-success">${l.completed_end_time}</small></td>
+                  <td><span class="badge bg-light text-dark">${l.total_wait_minutes !== "—" ? l.total_wait_minutes + " mins" : "—"}</span></td>
+                  <td><b style="color:var(--primary-dark)">${l.consultation_duration_minutes !== "—" ? l.consultation_duration_minutes + " mins" : "—"}</b></td>
+                  <td><span class="pill ${l.status === 'completed' ? 'green' : (l.status === 'called' ? 'green blinking' : 'orange')}">${l.status.toUpperCase()}</span></td>
+                </tr>
+              `).join("") || '<tr><td colspan="9" class="text-center text-muted py-4">No timestamp records found.</td></tr>'}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    `;
+  }
+}
+
+function renderHospTableRows(queue) {
+  return queue.map(q => {
+    const isOngoing = q.status === "called";
+    const isCompleted = q.status === "completed";
+    const isWaiting = q.status === "waiting";
+    
+    let durText = "—";
+    if (q.duration_seconds) {
+      const m = Math.floor(q.duration_seconds / 60);
+      const s = q.duration_seconds % 60;
+      durText = `${m}m ${s}s`;
+    } else if (q.elapsed_ongoing_seconds) {
+      const m = Math.floor(q.elapsed_ongoing_seconds / 60);
+      durText = `${m}m ongoing`;
+    }
+
+    return `
+      <tr class="${isOngoing ? 'table-active-row' : ''}">
+        <td><b class="token-pill">${esc(q.token_no)}</b></td>
+        <td>
+          <div><b>${esc(q.patient_name)}</b></div>
+          <small class="text-muted">${esc(q.symptoms || "No symptoms specified")}</small>
+        </td>
+        <td>${esc(q.doctor_name)} <br><small class="text-muted">${esc(q.department_name)}</small></td>
+        <td><small>${q.checked_in_time || '—'}</small></td>
+        <td><small class="${isOngoing ? 'fw-bold text-teal' : ''}">${q.called_time || '—'}</small></td>
+        <td><small>${q.completed_time || '—'}</small></td>
+        <td><span class="badge bg-light text-dark">${durText}</span></td>
+        <td>
+          ${isOngoing ? '<span class="pill green blinking"><i class="bi bi-broadcast"></i> ONGOING</span>' :
+            isCompleted ? '<span class="pill green">COMPLETED</span>' :
+            '<span class="pill orange">WAITING</span>'}
+        </td>
+        <td>
+          <div class="d-flex gap-1">
+            ${isWaiting ? `<button class="btn btn-sm btn-teal" style="font-size:11px;padding:4px 8px" onclick="markOngoing(${q.queue_id})"><i class="bi bi-play-fill"></i> Mark Ongoing</button>` : ''}
+            ${isOngoing ? `<button class="btn btn-sm btn-success" style="font-size:11px;padding:4px 8px" onclick="markCompleted(${q.queue_id})"><i class="bi bi-check-circle-fill"></i> Mark Complete</button>` : ''}
+            ${!isCompleted ? `<button class="btn btn-sm btn-outline-danger" style="font-size:11px;padding:4px 6px" onclick="cancelQueue(${q.queue_id})"><i class="bi bi-x-lg"></i></button>` : ''}
+          </div>
+        </td>
+      </tr>
+    `;
+  }).join("") || '<tr><td colspan="9" class="text-center py-4 text-muted">No patient tickets currently in queue.</td></tr>';
+}
+
+async function renderHospitalFilteredQueue() {
+  const docId = $("#hospFilterDoctor")?.value;
+  const path = docId ? `/hospital/queue?doctor_id=${docId}` : "/hospital/queue";
+  const queue = await api(path);
+  const tbody = $("#hospQueueTbody");
+  if (tbody) tbody.innerHTML = renderHospTableRows(queue);
+}
+
+async function markOngoing(queueId) {
+  try {
+    const res = await api(`/hospital/queue/${queueId}/ongoing`, { method: "POST" });
+    toast(`Ticket ${res.token_no} marked ONGOING at ${res.called_time.slice(11, 19)}`);
+    render();
+  } catch (e) {
+    toast(e.message);
+  }
+}
+
+async function markCompleted(queueId) {
+  try {
+    const res = await api(`/hospital/queue/${queueId}/complete`, { method: "POST" });
+    toast(`Ticket ${res.token_no} marked COMPLETED (Duration: ${res.duration_minutes} mins)`);
+    render();
+  } catch (e) {
+    toast(e.message);
+  }
+}
+
+async function cancelQueue(queueId) {
+  if (!confirm("Are you sure you want to cancel this ticket?")) return;
+  try {
+    await api(`/hospital/queue/${queueId}/cancel`, { method: "POST" });
+    toast("Queue ticket cancelled");
+    render();
+  } catch (e) {
+    toast(e.message);
+  }
+}
+
+async function saveDoctorSchedule(doctorId) {
+  const doctor = (window.cachedHospitalDoctors || []).find(d => d.id === doctorId);
+  const isAvailable = $(`#avail_${doctorId}`)?.checked ?? true;
+  const weekly_schedule = doctor ? doctor.weekly_schedule : {
+    monday: true, tuesday: true, wednesday: true, thursday: true, friday: true, saturday: true, sunday: false
+  };
+
+  try {
+    await api(`/hospital/doctors/${doctorId}/schedule`, {
+      method: "POST",
+      body: JSON.stringify({ is_available: isAvailable, weekly_schedule })
+    });
+    toast("Doctor schedule and day availability saved!");
+    render();
+  } catch (e) {
+    toast(e.message);
+  }
+}
+
+function toggleDoctorDay(doctorId, day) {
+  const doctor = (window.cachedHospitalDoctors || []).find(d => d.id === doctorId);
+  if (doctor) {
+    if (!doctor.weekly_schedule) doctor.weekly_schedule = { monday: true, tuesday: true, wednesday: true, thursday: true, friday: true, saturday: true, sunday: false };
+    doctor.weekly_schedule[day] = !doctor.weekly_schedule[day];
+    render();
+  }
+}
+
+function toggleDoctorMaster(doctorId) {
+  const doctor = (window.cachedHospitalDoctors || []).find(d => d.id === doctorId);
+  if (doctor) {
+    doctor.is_available = $(`#avail_${doctorId}`)?.checked ?? !doctor.is_available;
+  }
+}
+
+function quickLogin(email, password) {
+  $("#loginEmail").value = email;
+  $("#loginPassword").value = password;
+  $("#loginForm").dispatchEvent(new Event("submit"));
+}
+
 boot();
