@@ -39,6 +39,7 @@ class Doctor(Base):
     specialization: Mapped[str] = mapped_column(String(120))
     consultation_fee: Mapped[float] = mapped_column(Float, default=500)
     is_available: Mapped[bool] = mapped_column(Boolean, default=True)
+    weekly_schedule: Mapped[dict | None] = mapped_column(JSON, nullable=True)
 
 class Slot(Base):
     __tablename__ = 'slots'
