@@ -1,29 +1,435 @@
-const API_BASE='http://127.0.0.1:8000/api';
-let token=localStorage.getItem('mq_token'); let currentUser=JSON.parse(localStorage.getItem('mq_user')||'null'); let active='dashboard'; let chart;
-const $=s=>document.querySelector(s); const esc=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
-async function api(path,opts={}){opts.headers={'Content-Type':'application/json',...(opts.headers||{})};if(token)opts.headers.Authorization=`Bearer ${token}`;let r=await fetch(API_BASE+path,opts);let data=await r.json().catch(()=>({detail:'Server returned an invalid response'}));if(!r.ok)throw new Error(data.detail||'Request failed');return data}
-function toast(msg){const t=$('#toast');t.textContent=msg;t.style.display='block';setTimeout(()=>t.style.display='none',2800)}
-function boot(){if(token&&currentUser){showApp();renderNav();render()}else{$('#authView').classList.remove('hidden');$('#appView').classList.add('hidden')}}
-function showApp(){$('#authView').classList.add('hidden');$('#appView').classList.remove('hidden');$('#userName').textContent=currentUser.name;$('#userRole').textContent=currentUser.role[0].toUpperCase()+currentUser.role.slice(1);$('#avatar').textContent=currentUser.name[0].toUpperCase()}
-function renderNav(){const items=currentUser.role==='patient'?[['dashboard','grid-1x2','Dashboard'],['book','calendar-plus','Book Appointment'],['appointments','calendar-check','My Appointments'],['queue','people','Live Queue'],['eslips','qr-code','E-Slips'],['doctors','person-badge','Doctors'],['departments','building','Departments'],['notifications','bell','Notifications'],['profile','person','Profile']]:currentUser.role==='doctor'?[['dashboard','speedometer2','Dashboard'],['appointments','calendar-check','Appointments'],['queue','people','Live Queue'],['slots','clock','Manage Slots'],['profile','person','Profile']]:[['dashboard','grid-1x2','Dashboard'],['doctors','person-badge','Doctors'],['departments','building','Departments'],['analytics','bar-chart-line','Analytics'],['appointments','calendar-check','Appointments']];$('#nav').innerHTML=items.map(([id,icon,label])=>`<button class="nav-btn ${active===id?'active':''}" data-page="${id}"><i class="bi bi-${icon}"></i><span>${label}</span></button>`).join('');document.querySelectorAll('.nav-btn').forEach(b=>b.onclick=()=>{active=b.dataset.page;renderNav();render()})}
-async function render(){const c=$('#content');c.innerHTML='<div class="empty">Loading MediQueue...</div>';try{if(currentUser.role==='patient')await patientPage(c);else if(currentUser.role==='doctor')await doctorPage(c);else await adminPage(c)}catch(e){c.innerHTML=`<div class="panel empty"><i class="bi bi-exclamation-triangle"></i><br>${esc(e.message)}</div>`}}
-async function patientPage(c){if(active==='dashboard'){const d=await api('/patient/home');const next=d.appointments.find(x=>['booked','checked_in','called'].includes(x.status));c.innerHTML=`<div class="hero"><div><h1>Good Morning, ${esc(d.patient.name)}! 👋</h1><p>We're here to make your visit smooth and hassle-free.</p></div><div class="hero-art"><i class="bi bi-hospital"></i></div></div><div class="cards"><div class="action-card" onclick="go('book')"><i class="bi bi-calendar-plus"></i><h3>Book Appointment</h3><p>Find doctors & book your slot</p></div><div class="action-card" onclick="go('queue')"><i class="bi bi-signpost-2"></i><h3>Live Queue</h3><p>Check your token status</p></div><div class="action-card" onclick="go('eslips')"><i class="bi bi-qr-code"></i><h3>E-Slip</h3><p>View your E-Slip & QR code</p></div><div class="action-card" onclick="go('appointments')"><i class="bi bi-clock-history"></i><h3>My Appointments</h3><p>See your upcoming visits</p></div></div><div class="section-title">Today's Overview</div><div class="stats"><div class="stat-card"><span>Your Token Number</span><strong>${next?.token||'—'}</strong><div class="trend">Smart queue</div></div><div class="stat-card"><span>Estimated Waiting Time</span><strong>${next?.waiting_minutes??'—'} ${next?'min':''}</strong><div class="trend">Updated live</div></div><div class="stat-card"><span>Appointment Status</span><strong style="font-size:18px;margin-top:12px">${next?next.status.replace('_',' '):'No visit'}</strong><div class="trend">Digital check-in</div></div><div class="stat-card"><span>Appointments</span><strong>${d.appointments.length}</strong><div class="trend">History & upcoming</div></div></div><div class="section-title">Hospital Insights</div><div class="grid2"><div class="panel"><h3>Patient Flow Overview</h3><div class="chart-wrap"><canvas id="flowChart"></canvas></div></div><div class="panel"><h3>Top Departments</h3><div class="chart-wrap"><canvas id="deptChart"></canvas></div></div></div>`;makeCharts()}else if(active==='book'||active==='doctors'){await renderBooking(c)}else if(active==='appointments'||active==='eslips'){const d=await api('/patient/home');c.innerHTML=`<div class="section-title">${active==='appointments'?'My Appointments':'My E-Slips'}</div><div class="panel"><table class="table"><thead><tr><th>Doctor</th><th>OPD</th><th>Date</th><th>Token</th><th>Status</th><th></th></tr></thead><tbody>${d.appointments.map(a=>`<tr><td><b>${esc(a.doctor)}</b><br><small>${esc(a.specialization)}</small></td><td>${esc(a.department)}</td><td>${a.date} · ${a.time}</td><td><b>${esc(a.token||'—')}</b></td><td><span class="pill ${a.status==='completed'?'green':a.status==='checked_in'?'purple':'orange'}">${esc(a.status)}</span></td><td><button class="btn btn-sm btn-outline-primary" onclick="openSlip(${a.id})">${active==='eslips'?'View E-Slip':'Details'}</button></td></tr>`).join('')||'<tr><td colspan="6" class="empty">No appointments yet.</td></tr>'}</tbody></table></div>`}else if(active==='queue'){const d=await api('/patient/home');const a=d.appointments.find(x=>['checked_in','called','booked'].includes(x.status));if(!a){c.innerHTML='<div class="panel empty">No active queue. Book an appointment first.</div>';return}const q=await api('/patient/queue/'+a.id);c.innerHTML=`<div class="section-title">Live Queue</div><div class="queue-live"><div style="color:var(--muted);font-size:12px">${esc(a.department)} · ${esc(a.doctor)}</div><div class="queue-number">${esc(q.token||a.token)}</div><div style="margin:10px 0 20px">${q.position??'—'} patients position · ${q.waiting_minutes??'—'} min estimated wait</div><div class="progress-line"><span style="width:${Math.max(8,100-Math.min((q.position||1)*8,92))}%"></span></div><div class="d-flex justify-content-between mt-3" style="font-size:11px;color:var(--muted)"><span>Now serving: <b>${q.now_serving||'—'}</b></span><span>Status: <b>${q.status}</b></span></div>${a.status==='booked'?`<button class="primary-btn" style="max-width:250px" onclick="checkIn(${a.id})">Check In</button>`:''}</div>`}else{c.innerHTML=`<div class="panel empty">${esc(active)} is ready for the next module.</div>`}}
-async function renderBooking(c){const docs=await api('/patient/doctors');c.innerHTML=`<div class="section-title">Find a Doctor</div><div class="doctor-grid">${docs.map(d=>`<div class="doctor-card"><div class="doctor-head"><div class="doc-avatar">${esc(d.name.replace('Dr. ','')[0])}</div><div><h3>${esc(d.name)}</h3><p>${esc(d.specialization)}</p><p>${esc(d.department)} · ${esc(d.hospital)}</p></div></div><div class="d-flex justify-content-between mt-3"><small>Consultation</small><b>₹${d.fee}</b></div><button class="book" onclick="chooseDoctor(${d.id},'${esc(d.name)}')">View Availability</button></div>`).join('')}</div>`}
-async function chooseDoctor(id,name){const dateStr=new Date().toISOString().slice(0,10);const slots=await api(`/patient/slots?doctor_id=${id}&selected_date=${dateStr}`);showModal(`<button class="close" onclick="closeModal()">×</button><h3>Book with ${esc(name)}</h3><p class="text-muted small">Today · Select an available slot</p><div class="slot-list">${slots.map(s=>`<button class="slot ${s.available?'':'disabled'}" ${s.available?'':'disabled'} onclick="book(${id},${s.id})">${s.start_time} · ${s.booked_count}/${s.max_patients}</button>`).join('')||'<div class="empty">No slots available today.</div>'}</div>`)}
-async function book(doctorId,slotId){try{const r=await api('/patient/appointments',{method:'POST',body:JSON.stringify({doctor_id:doctorId,slot_id:slotId})});closeModal();toast(`Appointment booked. Token ${r.token}`);active='appointments';renderNav();render()}catch(e){toast(e.message)}}
-async function checkIn(id){try{const r=await api('/patient/check-in',{method:'POST',body:JSON.stringify({appointment_id:id})});toast(`Checked in. Token ${r.token}`);active='queue';renderNav();render()}catch(e){toast(e.message)}}
-async function openSlip(id){const d=await api('/patient/eslip/'+id);showModal(`<button class="close" onclick="closeModal()">×</button><div class="eslip"><div class="d-flex justify-content-between"><div><span class="eyebrow">MEDIQUEUE E-SLIP</span><h3>${esc(d.token)}</h3><p>${esc(d.patient)} · ${esc(d.doctor)}</p></div><img class="qr" src="${d.qr}" alt="QR code"></div><hr><div class="row g-3 small"><div class="col-6"><b>Hospital</b><br>${esc(d.hospital)}</div><div class="col-6"><b>OPD</b><br>${esc(d.department)}</div><div class="col-6"><b>Date</b><br>${d.date}</div><div class="col-6"><b>Time</b><br>${d.time}</div><div class="col-6"><b>Consultation Fee</b><br>₹${d.fee}</div><div class="col-6"><b>Status</b><br>${d.status}</div></div><button class="primary-btn" onclick="downloadSlip(${id})">Download PDF E-Slip</button></div>`)}
-async function downloadSlip(id){const r=await fetch(API_BASE+`/slips/${id}/pdf`,{headers:{Authorization:`Bearer ${token}`}});if(!r.ok){toast('Could not download E-Slip');return}const blob=await r.blob(),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=`mediqueue-eslip-${id}.pdf`;a.click();URL.revokeObjectURL(url)}
-async function doctorPage(c){if(active==='dashboard'){const d=await api('/doctor/dashboard');c.innerHTML=`<div class="hero"><h1>Doctor Dashboard</h1><p>Manage today's appointments, queue and consultations.</p></div><div class="section-title">Today's Overview</div><div class="stats"><div class="stat-card"><span>Booked</span><strong>${d.stats.booked}</strong></div><div class="stat-card"><span>Checked In</span><strong>${d.stats.checked_in}</strong></div><div class="stat-card"><span>Completed</span><strong>${d.stats.completed}</strong></div><div class="stat-card"><span>Waiting</span><strong>${d.stats.waiting}</strong></div></div><div class="section-title">Current Queue</div><div class="panel"><button class="primary-btn" style="width:auto;padding:10px 20px;margin:0 0 15px" onclick="nextPatient()">Call Next Patient</button>${queueTable(d.queue,true)}</div>`}else if(active==='queue'){const d=await api('/doctor/dashboard');c.innerHTML=`<div class="section-title">Live OPD Queue</div><div class="panel">${queueTable(d.queue,true)}</div>`}else if(active==='appointments'){const a=await api('/doctor/appointments');c.innerHTML=`<div class="section-title">Appointments</div><div class="panel">${queueTable(a,false)}</div>`}else if(active==='slots'){c.innerHTML=`<div class="section-title">Manage Slots</div><div class="panel"><div class="row g-3"><div class="col-md-4"><label class="small fw-bold">Date</label><input id="slotDate" class="form-control" type="date" value="${new Date().toISOString().slice(0,10)}"></div><div class="col-md-3"><label class="small fw-bold">Start</label><input id="slotStart" class="form-control" type="time" value="10:00"></div><div class="col-md-3"><label class="small fw-bold">End</label><input id="slotEnd" class="form-control" type="time" value="10:30"></div><div class="col-md-2"><label class="small fw-bold">Capacity</label><input id="slotCap" class="form-control" type="number" value="10"></div></div><button class="primary-btn" style="width:auto" onclick="addSlot()">Create Slot</button></div>`}else c.innerHTML='<div class="panel empty">Profile management module.</div>'}
-function queueTable(rows,doctor){if(!rows.length)return '<div class="empty">No records.</div>';return `<table class="table"><thead><tr><th>Token</th><th>${doctor?'Patient':'Date'}</th><th>${doctor?'Position':'Time'}</th><th>Status</th><th></th></tr></thead><tbody>${rows.map(r=>`<tr><td><b>${esc(r.token||r.token_no||'—')}</b></td><td>${doctor?esc(r.patient_id||'Patient'):esc(r.date)}</td><td>${doctor?esc(r.position||'—'):esc(r.time)}</td><td><span class="pill purple">${esc(r.status)}</span></td><td>${doctor&&r.status==='called'?`<button class="btn btn-sm btn-success" onclick="completePatient(${r.id})">Complete</button>`:''}</td></tr>`).join('')}</tbody></table>`}
-async function nextPatient(){try{const r=await api('/doctor/queue/next',{method:'POST'});toast(`Now serving ${r.token}`);render()}catch(e){toast(e.message)}}
-async function completePatient(id){showModal(`<button class="close" onclick="closeModal()">×</button><h3>Complete Consultation</h3><textarea id="notes" class="form-control my-2" placeholder="Consultation notes"></textarea><textarea id="diagnosis" class="form-control my-2" placeholder="Diagnosis"></textarea><textarea id="prescription" class="form-control my-2" placeholder="Prescription"></textarea><button class="primary-btn" onclick="finishConsult(${id})">Complete Consultation</button>`)}
-async function finishConsult(id){try{await api('/doctor/queue/'+id+'/complete',{method:'POST',body:JSON.stringify({notes:$('#notes').value,diagnosis:$('#diagnosis').value,prescription:$('#prescription').value})});closeModal();toast('Consultation completed');render()}catch(e){toast(e.message)}}
-async function addSlot(){try{await api('/doctor/slots',{method:'POST',body:JSON.stringify({date:$('#slotDate').value,start_time:$('#slotStart').value,end_time:$('#slotEnd').value,max_patients:Number($('#slotCap').value)})});toast('Slot created')}catch(e){toast(e.message)}}
-async function adminPage(c){if(active==='dashboard'||active==='analytics'){const d=await api('/admin/dashboard');c.innerHTML=`<div class="hero"><h1>Hospital Analytics</h1><p>OPD reports, queue performance, patient flow and operational insights.</p></div><div class="section-title">Today's Overview</div><div class="stats"><div class="stat-card"><span>Today's Patients</span><strong>${d.kpis.patients_today}</strong><div class="trend">Live OPD count</div></div><div class="stat-card"><span>Completed</span><strong>${d.kpis.completed}</strong><div class="trend">Consultations</div></div><div class="stat-card"><span>Waiting</span><strong>${d.kpis.waiting}</strong><div class="trend">Current queue</div></div><div class="stat-card"><span>No-show Rate</span><strong>${d.kpis.no_show_rate}%</strong><div class="trend">Operational metric</div></div></div><div class="section-title">Analytics</div><div class="grid2"><div class="panel"><h3>Department Comparison</h3><div class="chart-wrap"><canvas id="adminDept"></canvas></div></div><div class="panel"><h3>ML Model Snapshot</h3><div class="stat-card" style="box-shadow:none"><span>Waiting-time model</span><strong>Random Forest</strong><div class="trend">Queue size · hour · consultation duration · doctors</div></div><div class="stat-card" style="box-shadow:none"><span>No-show model</span><strong>Random Forest</strong><div class="trend">Lead time · history · cancellations</div></div></div></div>`;setTimeout(()=>{new Chart($('#adminDept'),{type:'doughnut',data:{labels:d.department_breakdown.map(x=>x.department),datasets:[{data:d.department_breakdown.map(x=>x.count)}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom'}}}})},50)}else if(active==='doctors'){const ds=await api('/admin/doctors');c.innerHTML=`<div class="section-title">Manage Doctors</div><div class="panel">${queueTable(ds,false)}</div>`}else c.innerHTML='<div class="panel empty">Administrative management screen.</div>'}
-function makeCharts(){setTimeout(()=>{if(chart)chart.destroy();chart=new Chart($('#flowChart'),{type:'line',data:{labels:['6 AM','8 AM','10 AM','12 PM','2 PM','4 PM','6 PM','8 PM'],datasets:[{label:'Patients',data:[28,52,86,119,102,130,72,22],fill:true,tension:.35}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}}}});new Chart($('#deptChart'),{type:'doughnut',data:{labels:['Dermatology','Cardiology','General Medicine','Orthopedics','Others'],datasets:[{data:[32,28,20,12,8]}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{boxWidth:10,font:{size:10}}}}}})},50)}
-function showModal(html){let x=document.createElement('div');x.id='modal';x.className='modal-backdrop-custom';x.innerHTML=`<div class="modal-box">${html}</div>`;document.body.appendChild(x)}function closeModal(){$('#modal')?.remove()}function go(p){active=p;renderNav();render()}window.go=go;window.chooseDoctor=chooseDoctor;window.book=book;window.checkIn=checkIn;window.openSlip=openSlip;window.downloadSlip=downloadSlip;window.nextPatient=nextPatient;window.completePatient=completePatient;window.finishConsult=finishConsult;window.addSlot=addSlot;window.closeModal=closeModal;
-$('#logout').onclick=()=>{localStorage.clear();location.reload()};document.querySelectorAll('.tabs button').forEach(b=>b.onclick=()=>{document.querySelectorAll('.tabs button').forEach(x=>x.classList.remove('active'));b.classList.add('active');$('#loginForm').classList.toggle('hidden',b.dataset.auth!=='login');$('#registerForm').classList.toggle('hidden',b.dataset.auth!=='register')});
-$('#loginForm').onsubmit=async e=>{e.preventDefault();try{const r=await api('/auth/login',{method:'POST',body:JSON.stringify({email:$('#loginEmail').value,password:$('#loginPassword').value})});token=r.access_token;currentUser=r.user;localStorage.setItem('mq_token',token);localStorage.setItem('mq_user',JSON.stringify(currentUser));showApp();renderNav();render()}catch(e){toast(e.message)}};
-$('#registerForm').onsubmit=async e=>{e.preventDefault();try{const r=await api('/auth/register',{method:'POST',body:JSON.stringify({name:$('#regName').value,email:$('#regEmail').value,phone:$('#regPhone').value,password:$('#regPassword').value})});token=r.access_token;currentUser=r.user;localStorage.setItem('mq_token',token);localStorage.setItem('mq_user',JSON.stringify(currentUser));showApp();renderNav();render()}catch(e){toast(e.message)}};
+const API_BASE = "http://127.0.0.1:8000/api";
+let token = localStorage.getItem("mq_token");
+let currentUser = JSON.parse(localStorage.getItem("mq_user") || "null");
+let active = "dashboard";
+let chart;
+const $ = (s) => document.querySelector(s);
+const esc = (s) =>
+  String(s ?? "").replace(
+    /[&<>"']/g,
+    (m) =>
+      ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[
+        m
+      ],
+  );
+async function api(path, opts = {}) {
+  opts.headers = {
+    "Content-Type": "application/json",
+    ...(opts.headers || {}),
+  };
+  if (token) opts.headers.Authorization = `Bearer ${token}`;
+  let r = await fetch(API_BASE + path, opts);
+  let data = await r
+    .json()
+    .catch(() => ({ detail: "Server returned an invalid response" }));
+  if (!r.ok) throw new Error(data.detail || "Request failed");
+  return data;
+}
+function toast(msg) {
+  const t = $("#toast");
+  t.textContent = msg;
+  t.style.display = "block";
+  setTimeout(() => (t.style.display = "none"), 2800);
+}
+function boot() {
+  if (token && currentUser) {
+    showApp();
+    renderNav();
+    render();
+  } else {
+    $("#authView").classList.remove("hidden");
+    $("#appView").classList.add("hidden");
+  }
+}
+function showApp() {
+  $("#authView").classList.add("hidden");
+  $("#appView").classList.remove("hidden");
+  $("#userName").textContent = currentUser.name;
+  $("#userRole").textContent =
+    currentUser.role[0].toUpperCase() + currentUser.role.slice(1);
+  $("#avatar").textContent = currentUser.name[0].toUpperCase();
+}
+function renderNav() {
+  const items =
+    currentUser.role === "patient"
+      ? [
+          ["dashboard", "grid-1x2", "Dashboard"],
+          ["book", "calendar-plus", "Book Appointment"],
+          ["appointments", "calendar-check", "My Appointments"],
+          ["queue", "people", "Live Queue"],
+          ["eslips", "qr-code", "E-Slips"],
+          ["doctors", "person-badge", "Doctors"],
+          ["departments", "building", "Departments"],
+          ["notifications", "bell", "Notifications"],
+          ["profile", "person", "Profile"],
+        ]
+      : currentUser.role === "doctor"
+        ? [
+            ["dashboard", "speedometer2", "Dashboard"],
+            ["appointments", "calendar-check", "Appointments"],
+            ["queue", "people", "Live Queue"],
+            ["slots", "clock", "Manage Slots"],
+            ["profile", "person", "Profile"],
+          ]
+        : [
+            ["dashboard", "grid-1x2", "Dashboard"],
+            ["doctors", "person-badge", "Doctors"],
+            ["departments", "building", "Departments"],
+            ["analytics", "bar-chart-line", "Analytics"],
+            ["appointments", "calendar-check", "Appointments"],
+          ];
+  $("#nav").innerHTML = items
+    .map(
+      ([id, icon, label]) =>
+        `<button class="nav-btn ${active === id ? "active" : ""}" data-page="${id}"><i class="bi bi-${icon}"></i><span>${label}</span></button>`,
+    )
+    .join("");
+  document.querySelectorAll(".nav-btn").forEach(
+    (b) =>
+      (b.onclick = () => {
+        active = b.dataset.page;
+        renderNav();
+        render();
+      }),
+  );
+}
+async function render() {
+  const c = $("#content");
+  c.innerHTML = '<div class="empty">Loading MediQueue...</div>';
+  try {
+    if (currentUser.role === "patient") await patientPage(c);
+    else if (currentUser.role === "doctor") await doctorPage(c);
+    else await adminPage(c);
+  } catch (e) {
+    c.innerHTML = `<div class="panel empty"><i class="bi bi-exclamation-triangle"></i><br>${esc(e.message)}</div>`;
+  }
+}
+async function patientPage(c) {
+  if (active === "dashboard") {
+    const d = await api("/patient/home");
+    const next = d.appointments.find((x) =>
+      ["booked", "checked_in", "called"].includes(x.status),
+    );
+    c.innerHTML = `<div class="hero"><div><h1>Good Morning, ${esc(d.patient.name)}! 👋</h1><p>We're here to make your visit smooth and hassle-free.</p></div><div class="hero-art"><i class="bi bi-hospital"></i></div></div><div class="cards"><div class="action-card" onclick="go('book')"><i class="bi bi-calendar-plus"></i><h3>Book Appointment</h3><p>Find doctors & book your slot</p></div><div class="action-card" onclick="go('queue')"><i class="bi bi-signpost-2"></i><h3>Live Queue</h3><p>Check your token status</p></div><div class="action-card" onclick="go('eslips')"><i class="bi bi-qr-code"></i><h3>E-Slip</h3><p>View your E-Slip & QR code</p></div><div class="action-card" onclick="go('appointments')"><i class="bi bi-clock-history"></i><h3>My Appointments</h3><p>See your upcoming visits</p></div></div><div class="section-title">Today's Overview</div><div class="stats"><div class="stat-card"><span>Your Token Number</span><strong>${next?.token || "—"}</strong><div class="trend">Smart queue</div></div><div class="stat-card"><span>Estimated Waiting Time</span><strong>${next?.waiting_minutes ?? "—"} ${next ? "min" : ""}</strong><div class="trend">Updated live</div></div><div class="stat-card"><span>Appointment Status</span><strong style="font-size:18px;margin-top:12px">${next ? next.status.replace("_", " ") : "No visit"}</strong><div class="trend">Digital check-in</div></div><div class="stat-card"><span>Appointments</span><strong>${d.appointments.length}</strong><div class="trend">History & upcoming</div></div></div><div class="section-title">Hospital Insights</div><div class="grid2"><div class="panel"><h3>Patient Flow Overview</h3><div class="chart-wrap"><canvas id="flowChart"></canvas></div></div><div class="panel"><h3>Top Departments</h3><div class="chart-wrap"><canvas id="deptChart"></canvas></div></div></div>`;
+    makeCharts();
+  } else if (active === "book" || active === "doctors") {
+    await renderBooking(c);
+  } else if (active === "appointments" || active === "eslips") {
+    const d = await api("/patient/home");
+    c.innerHTML = `<div class="section-title">${active === "appointments" ? "My Appointments" : "My E-Slips"}</div><div class="panel"><table class="table"><thead><tr><th>Doctor</th><th>OPD</th><th>Date</th><th>Token</th><th>Status</th><th></th></tr></thead><tbody>${d.appointments.map((a) => `<tr><td><b>${esc(a.doctor)}</b><br><small>${esc(a.specialization)}</small></td><td>${esc(a.department)}</td><td>${a.date} · ${a.time}</td><td><b>${esc(a.token || "—")}</b></td><td><span class="pill ${a.status === "completed" ? "green" : a.status === "checked_in" ? "purple" : "orange"}">${esc(a.status)}</span></td><td><button class="btn btn-sm btn-outline-primary" onclick="openSlip(${a.id})">${active === "eslips" ? "View E-Slip" : "Details"}</button></td></tr>`).join("") || '<tr><td colspan="6" class="empty">No appointments yet.</td></tr>'}</tbody></table></div>`;
+  } else if (active === "queue") {
+    const d = await api("/patient/home");
+    const a = d.appointments.find((x) =>
+      ["checked_in", "called", "booked"].includes(x.status),
+    );
+    if (!a) {
+      c.innerHTML =
+        '<div class="panel empty">No active queue. Book an appointment first.</div>';
+      return;
+    }
+    const q = await api("/patient/queue/" + a.id);
+    c.innerHTML = `<div class="section-title">Live Queue</div><div class="queue-live"><div style="color:var(--muted);font-size:12px">${esc(a.department)} · ${esc(a.doctor)}</div><div class="queue-number">${esc(q.token || a.token)}</div><div style="margin:10px 0 20px">${q.position ?? "—"} patients position · ${q.waiting_minutes ?? "—"} min estimated wait</div><div class="progress-line"><span style="width:${Math.max(8, 100 - Math.min((q.position || 1) * 8, 92))}%"></span></div><div class="d-flex justify-content-between mt-3" style="font-size:11px;color:var(--muted)"><span>Now serving: <b>${q.now_serving || "—"}</b></span><span>Status: <b>${q.status}</b></span></div>${a.status === "booked" ? `<button class="primary-btn" style="max-width:250px" onclick="checkIn(${a.id})">Check In</button>` : ""}</div>`;
+  } else {
+    c.innerHTML = `<div class="panel empty">${esc(active)} is ready for the next module.</div>`;
+  }
+}
+async function renderBooking(c) {
+  const docs = await api("/patient/doctors");
+  c.innerHTML = `<div class="section-title">Find a Doctor</div><div class="doctor-grid">${docs.map((d) => `<div class="doctor-card"><div class="doctor-head"><div class="doc-avatar">${esc(d.name.replace("Dr. ", "")[0])}</div><div><h3>${esc(d.name)}</h3><p>${esc(d.specialization)}</p><p>${esc(d.department)} · ${esc(d.hospital)}</p></div></div><div class="d-flex justify-content-between mt-3"><small>Consultation</small><b>₹${d.fee}</b></div><button class="book" onclick="chooseDoctor(${d.id},'${esc(d.name)}')">View Availability</button></div>`).join("")}</div>`;
+}
+async function chooseDoctor(id, name) {
+  const dateStr = new Date().toISOString().slice(0, 10);
+  const slots = await api(
+    `/patient/slots?doctor_id=${id}&selected_date=${dateStr}`,
+  );
+  showModal(
+    `<button class="close" onclick="closeModal()">×</button><h3>Book with ${esc(name)}</h3><p class="text-muted small">Today · Select an available slot</p><div class="slot-list">${slots.map((s) => `<button class="slot ${s.available ? "" : "disabled"}" ${s.available ? "" : "disabled"} onclick="book(${id},${s.id})">${s.start_time} · ${s.booked_count}/${s.max_patients}</button>`).join("") || '<div class="empty">No slots available today.</div>'}</div>`,
+  );
+}
+async function book(doctorId, slotId) {
+  try {
+    const r = await api("/patient/appointments", {
+      method: "POST",
+      body: JSON.stringify({ doctor_id: doctorId, slot_id: slotId }),
+    });
+    closeModal();
+    toast(`Appointment booked. Token ${r.token}`);
+    active = "appointments";
+    renderNav();
+    render();
+  } catch (e) {
+    toast(e.message);
+  }
+}
+async function checkIn(id) {
+  try {
+    const r = await api("/patient/check-in", {
+      method: "POST",
+      body: JSON.stringify({ appointment_id: id }),
+    });
+    toast(`Checked in. Token ${r.token}`);
+    active = "queue";
+    renderNav();
+    render();
+  } catch (e) {
+    toast(e.message);
+  }
+}
+async function openSlip(id) {
+  const d = await api("/patient/eslip/" + id);
+  showModal(
+    `<button class="close" onclick="closeModal()">×</button><div class="eslip"><div class="d-flex justify-content-between"><div><span class="eyebrow">MEDIQUEUE E-SLIP</span><h3>${esc(d.token)}</h3><p>${esc(d.patient)} · ${esc(d.doctor)}</p></div><img class="qr" src="${d.qr}" alt="QR code"></div><hr><div class="row g-3 small"><div class="col-6"><b>Hospital</b><br>${esc(d.hospital)}</div><div class="col-6"><b>OPD</b><br>${esc(d.department)}</div><div class="col-6"><b>Date</b><br>${d.date}</div><div class="col-6"><b>Time</b><br>${d.time}</div><div class="col-6"><b>Consultation Fee</b><br>₹${d.fee}</div><div class="col-6"><b>Status</b><br>${d.status}</div></div><button class="primary-btn" onclick="downloadSlip(${id})">Download PDF E-Slip</button></div>`,
+  );
+}
+async function downloadSlip(id) {
+  const r = await fetch(API_BASE + `/slips/${id}/pdf`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!r.ok) {
+    toast("Could not download E-Slip");
+    return;
+  }
+  const blob = await r.blob(),
+    url = URL.createObjectURL(blob),
+    a = document.createElement("a");
+  a.href = url;
+  a.download = `mediqueue-eslip-${id}.pdf`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+async function doctorPage(c) {
+  if (active === "dashboard") {
+    const d = await api("/doctor/dashboard");
+    c.innerHTML = `<div class="hero"><h1>Doctor Dashboard</h1><p>Manage today's appointments, queue and consultations.</p></div><div class="section-title">Today's Overview</div><div class="stats"><div class="stat-card"><span>Booked</span><strong>${d.stats.booked}</strong></div><div class="stat-card"><span>Checked In</span><strong>${d.stats.checked_in}</strong></div><div class="stat-card"><span>Completed</span><strong>${d.stats.completed}</strong></div><div class="stat-card"><span>Waiting</span><strong>${d.stats.waiting}</strong></div></div><div class="section-title">Current Queue</div><div class="panel"><button class="primary-btn" style="width:auto;padding:10px 20px;margin:0 0 15px" onclick="nextPatient()">Call Next Patient</button>${queueTable(d.queue, true)}</div>`;
+  } else if (active === "queue") {
+    const d = await api("/doctor/dashboard");
+    c.innerHTML = `<div class="section-title">Live OPD Queue</div><div class="panel">${queueTable(d.queue, true)}</div>`;
+  } else if (active === "appointments") {
+    const a = await api("/doctor/appointments");
+    c.innerHTML = `<div class="section-title">Appointments</div><div class="panel">${queueTable(a, false)}</div>`;
+  } else if (active === "slots") {
+    c.innerHTML = `<div class="section-title">Manage Slots</div><div class="panel"><div class="row g-3"><div class="col-md-4"><label class="small fw-bold">Date</label><input id="slotDate" class="form-control" type="date" value="${new Date().toISOString().slice(0, 10)}"></div><div class="col-md-3"><label class="small fw-bold">Start</label><input id="slotStart" class="form-control" type="time" value="10:00"></div><div class="col-md-3"><label class="small fw-bold">End</label><input id="slotEnd" class="form-control" type="time" value="10:30"></div><div class="col-md-2"><label class="small fw-bold">Capacity</label><input id="slotCap" class="form-control" type="number" value="10"></div></div><button class="primary-btn" style="width:auto" onclick="addSlot()">Create Slot</button></div>`;
+  } else
+    c.innerHTML = '<div class="panel empty">Profile management module.</div>';
+}
+function queueTable(rows, doctor) {
+  if (!rows.length) return '<div class="empty">No records.</div>';
+  return `<table class="table"><thead><tr><th>Token</th><th>${doctor ? "Patient" : "Date"}</th><th>${doctor ? "Position" : "Time"}</th><th>Status</th><th></th></tr></thead><tbody>${rows.map((r) => `<tr><td><b>${esc(r.token || r.token_no || "—")}</b></td><td>${doctor ? esc(r.patient_id || "Patient") : esc(r.date)}</td><td>${doctor ? esc(r.position || "—") : esc(r.time)}</td><td><span class="pill purple">${esc(r.status)}</span></td><td>${doctor && r.status === "called" ? `<button class="btn btn-sm btn-success" onclick="completePatient(${r.id})">Complete</button>` : ""}</td></tr>`).join("")}</tbody></table>`;
+}
+async function nextPatient() {
+  try {
+    const r = await api("/doctor/queue/next", { method: "POST" });
+    toast(`Now serving ${r.token}`);
+    render();
+  } catch (e) {
+    toast(e.message);
+  }
+}
+async function completePatient(id) {
+  showModal(
+    `<button class="close" onclick="closeModal()">×</button><h3>Complete Consultation</h3><textarea id="notes" class="form-control my-2" placeholder="Consultation notes"></textarea><textarea id="diagnosis" class="form-control my-2" placeholder="Diagnosis"></textarea><textarea id="prescription" class="form-control my-2" placeholder="Prescription"></textarea><button class="primary-btn" onclick="finishConsult(${id})">Complete Consultation</button>`,
+  );
+}
+async function finishConsult(id) {
+  try {
+    await api("/doctor/queue/" + id + "/complete", {
+      method: "POST",
+      body: JSON.stringify({
+        notes: $("#notes").value,
+        diagnosis: $("#diagnosis").value,
+        prescription: $("#prescription").value,
+      }),
+    });
+    closeModal();
+    toast("Consultation completed");
+    render();
+  } catch (e) {
+    toast(e.message);
+  }
+}
+async function addSlot() {
+  try {
+    await api("/doctor/slots", {
+      method: "POST",
+      body: JSON.stringify({
+        date: $("#slotDate").value,
+        start_time: $("#slotStart").value,
+        end_time: $("#slotEnd").value,
+        max_patients: Number($("#slotCap").value),
+      }),
+    });
+    toast("Slot created");
+  } catch (e) {
+    toast(e.message);
+  }
+}
+async function adminPage(c) {
+  if (active === "dashboard" || active === "analytics") {
+    const d = await api("/admin/dashboard");
+    c.innerHTML = `<div class="hero"><h1>Hospital Analytics</h1><p>OPD reports, queue performance, patient flow and operational insights.</p></div><div class="section-title">Today's Overview</div><div class="stats"><div class="stat-card"><span>Today's Patients</span><strong>${d.kpis.patients_today}</strong><div class="trend">Live OPD count</div></div><div class="stat-card"><span>Completed</span><strong>${d.kpis.completed}</strong><div class="trend">Consultations</div></div><div class="stat-card"><span>Waiting</span><strong>${d.kpis.waiting}</strong><div class="trend">Current queue</div></div><div class="stat-card"><span>No-show Rate</span><strong>${d.kpis.no_show_rate}%</strong><div class="trend">Operational metric</div></div></div><div class="section-title">Analytics</div><div class="grid2"><div class="panel"><h3>Department Comparison</h3><div class="chart-wrap"><canvas id="adminDept"></canvas></div></div><div class="panel"><h3>ML Model Snapshot</h3><div class="stat-card" style="box-shadow:none"><span>Waiting-time model</span><strong>Random Forest</strong><div class="trend">Queue size · hour · consultation duration · doctors</div></div><div class="stat-card" style="box-shadow:none"><span>No-show model</span><strong>Random Forest</strong><div class="trend">Lead time · history · cancellations</div></div></div></div>`;
+    setTimeout(() => {
+      new Chart($("#adminDept"), {
+        type: "doughnut",
+        data: {
+          labels: d.department_breakdown.map((x) => x.department),
+          datasets: [{ data: d.department_breakdown.map((x) => x.count) }],
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { position: "bottom" } },
+        },
+      });
+    }, 50);
+  } else if (active === "doctors") {
+    const ds = await api("/admin/doctors");
+    c.innerHTML = `<div class="section-title">Manage Doctors</div><div class="panel">${queueTable(ds, false)}</div>`;
+  } else
+    c.innerHTML =
+      '<div class="panel empty">Administrative management screen.</div>';
+}
+function makeCharts() {
+  setTimeout(() => {
+    if (chart) chart.destroy();
+    chart = new Chart($("#flowChart"), {
+      type: "line",
+      data: {
+        labels: [
+          "6 AM",
+          "8 AM",
+          "10 AM",
+          "12 PM",
+          "2 PM",
+          "4 PM",
+          "6 PM",
+          "8 PM",
+        ],
+        datasets: [
+          {
+            label: "Patients",
+            data: [28, 52, 86, 119, 102, 130, 72, 22],
+            fill: true,
+            tension: 0.35,
+          },
+        ],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+      },
+    });
+    new Chart($("#deptChart"), {
+      type: "doughnut",
+      data: {
+        labels: [
+          "Dermatology",
+          "Cardiology",
+          "General Medicine",
+          "Orthopedics",
+          "Others",
+        ],
+        datasets: [{ data: [32, 28, 20, 12, 8] }],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            position: "bottom",
+            labels: { boxWidth: 10, font: { size: 10 } },
+          },
+        },
+      },
+    });
+  }, 50);
+}
+function showModal(html) {
+  let x = document.createElement("div");
+  x.id = "modal";
+  x.className = "modal-backdrop-custom";
+  x.innerHTML = `<div class="modal-box">${html}</div>`;
+  document.body.appendChild(x);
+}
+function closeModal() {
+  $("#modal")?.remove();
+}
+function go(p) {
+  active = p;
+  renderNav();
+  render();
+}
+window.go = go;
+window.chooseDoctor = chooseDoctor;
+window.book = book;
+window.checkIn = checkIn;
+window.openSlip = openSlip;
+window.downloadSlip = downloadSlip;
+window.nextPatient = nextPatient;
+window.completePatient = completePatient;
+window.finishConsult = finishConsult;
+window.addSlot = addSlot;
+window.closeModal = closeModal;
+$("#logout").onclick = () => {
+  localStorage.clear();
+  location.reload();
+};
+document.querySelectorAll(".tabs button").forEach(
+  (b) =>
+    (b.onclick = () => {
+      document
+        .querySelectorAll(".tabs button")
+        .forEach((x) => x.classList.remove("active"));
+      b.classList.add("active");
+      $("#loginForm").classList.toggle("hidden", b.dataset.auth !== "login");
+      $("#registerForm").classList.toggle(
+        "hidden",
+        b.dataset.auth !== "register",
+      );
+    }),
+);
+$("#loginForm").onsubmit = async (e) => {
+  e.preventDefault();
+  try {
+    const r = await api("/auth/login", {
+      method: "POST",
+      body: JSON.stringify({
+        email: $("#loginEmail").value,
+        password: $("#loginPassword").value,
+      }),
+    });
+    token = r.access_token;
+    currentUser = r.user;
+    localStorage.setItem("mq_token", token);
+    localStorage.setItem("mq_user", JSON.stringify(currentUser));
+    showApp();
+    renderNav();
+    render();
+  } catch (e) {
+    toast(e.message);
+  }
+};
+$("#registerForm").onsubmit = async (e) => {
+  e.preventDefault();
+  try {
+    const r = await api("/auth/register", {
+      method: "POST",
+      body: JSON.stringify({
+        name: $("#regName").value,
+        email: $("#regEmail").value,
+        phone: $("#regPhone").value,
+        password: $("#regPassword").value,
+      }),
+    });
+    token = r.access_token;
+    currentUser = r.user;
+    localStorage.setItem("mq_token", token);
+    localStorage.setItem("mq_user", JSON.stringify(currentUser));
+    showApp();
+    renderNav();
+    render();
+  } catch (e) {
+    toast(e.message);
+  }
+};
 boot();

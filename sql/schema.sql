@@ -1,16 +1,147 @@
 CREATE DATABASE IF NOT EXISTS mediqueue CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
 USE mediqueue;
 
-CREATE TABLE users (id INT AUTO_INCREMENT PRIMARY KEY,name VARCHAR(120) NOT NULL,email VARCHAR(180) UNIQUE NOT NULL,phone VARCHAR(30),password_hash VARCHAR(255) NOT NULL,role VARCHAR(20) NOT NULL DEFAULT 'patient',is_active BOOLEAN DEFAULT TRUE,created_at DATETIME DEFAULT CURRENT_TIMESTAMP);
-CREATE TABLE hospitals (id INT AUTO_INCREMENT PRIMARY KEY,name VARCHAR(180) NOT NULL,address VARCHAR(255) NOT NULL,city VARCHAR(80) NOT NULL,phone VARCHAR(30),email VARCHAR(180));
-CREATE TABLE departments (id INT AUTO_INCREMENT PRIMARY KEY,hospital_id INT NOT NULL,name VARCHAR(120) NOT NULL,description TEXT,FOREIGN KEY(hospital_id) REFERENCES hospitals(id));
-CREATE TABLE doctors (id INT AUTO_INCREMENT PRIMARY KEY,user_id INT UNIQUE NOT NULL,hospital_id INT NOT NULL,department_id INT NOT NULL,specialization VARCHAR(120) NOT NULL,consultation_fee DECIMAL(10,2) DEFAULT 500,is_available BOOLEAN DEFAULT TRUE,FOREIGN KEY(user_id) REFERENCES users(id),FOREIGN KEY(hospital_id) REFERENCES hospitals(id),FOREIGN KEY(department_id) REFERENCES departments(id));
-CREATE TABLE slots (id INT AUTO_INCREMENT PRIMARY KEY,doctor_id INT NOT NULL,date DATE NOT NULL,start_time TIME NOT NULL,end_time TIME NOT NULL,max_patients INT DEFAULT 10,booked_count INT DEFAULT 0,UNIQUE KEY uq_doctor_slot(doctor_id,date,start_time),FOREIGN KEY(doctor_id) REFERENCES doctors(id));
-CREATE TABLE appointments (id INT AUTO_INCREMENT PRIMARY KEY,patient_id INT NOT NULL,doctor_id INT NOT NULL,slot_id INT NOT NULL,appointment_date DATE NOT NULL,appointment_time TIME NOT NULL,token_no VARCHAR(30),status VARCHAR(30) DEFAULT 'booked',created_at DATETIME DEFAULT CURRENT_TIMESTAMP,FOREIGN KEY(patient_id) REFERENCES users(id),FOREIGN KEY(doctor_id) REFERENCES doctors(id),FOREIGN KEY(slot_id) REFERENCES slots(id));
-CREATE TABLE queue (id INT AUTO_INCREMENT PRIMARY KEY,appointment_id INT UNIQUE NOT NULL,patient_id INT NOT NULL,doctor_id INT NOT NULL,token_no VARCHAR(30) NOT NULL,queue_position INT NOT NULL,status VARCHAR(30) DEFAULT 'waiting',checked_in_time DATETIME,called_time DATETIME,completed_time DATETIME,FOREIGN KEY(appointment_id) REFERENCES appointments(id),FOREIGN KEY(patient_id) REFERENCES users(id),FOREIGN KEY(doctor_id) REFERENCES doctors(id));
-CREATE TABLE e_slips (id INT AUTO_INCREMENT PRIMARY KEY,appointment_id INT UNIQUE NOT NULL,qr_payload TEXT NOT NULL,created_at DATETIME DEFAULT CURRENT_TIMESTAMP,FOREIGN KEY(appointment_id) REFERENCES appointments(id));
-CREATE TABLE consultations (id INT AUTO_INCREMENT PRIMARY KEY,appointment_id INT UNIQUE NOT NULL,doctor_id INT NOT NULL,notes TEXT,diagnosis TEXT,prescription TEXT,consultation_datetime DATETIME DEFAULT CURRENT_TIMESTAMP,followup_date DATE,FOREIGN KEY(appointment_id) REFERENCES appointments(id),FOREIGN KEY(doctor_id) REFERENCES doctors(id));
-CREATE TABLE notifications (id INT AUTO_INCREMENT PRIMARY KEY,user_id INT NOT NULL,type VARCHAR(50),message TEXT NOT NULL,is_read BOOLEAN DEFAULT FALSE,created_at DATETIME DEFAULT CURRENT_TIMESTAMP,FOREIGN KEY(user_id) REFERENCES users(id));
-CREATE TABLE payments (id INT AUTO_INCREMENT PRIMARY KEY,appointment_id INT NOT NULL,amount DECIMAL(10,2) NOT NULL,payment_mode VARCHAR(30) DEFAULT 'cash',payment_status VARCHAR(30) DEFAULT 'pending',payment_date DATETIME DEFAULT CURRENT_TIMESTAMP,FOREIGN KEY(appointment_id) REFERENCES appointments(id));
-CREATE TABLE feedback (id INT AUTO_INCREMENT PRIMARY KEY,appointment_id INT NOT NULL,rating INT NOT NULL,comment TEXT,created_at DATETIME DEFAULT CURRENT_TIMESTAMP,FOREIGN KEY(appointment_id) REFERENCES appointments(id));
-CREATE TABLE audit_logs (id INT AUTO_INCREMENT PRIMARY KEY,user_id INT,action VARCHAR(100) NOT NULL,entity VARCHAR(100) NOT NULL,entity_id INT,created_at DATETIME DEFAULT CURRENT_TIMESTAMP,FOREIGN KEY(user_id) REFERENCES users(id));
+CREATE TABLE users (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(120) NOT NULL,
+    email VARCHAR(180) UNIQUE NOT NULL,
+    phone VARCHAR(30),
+    password_hash VARCHAR(255) NOT NULL,
+    role VARCHAR(20) NOT NULL DEFAULT 'patient',
+    is_active BOOLEAN DEFAULT TRUE,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE hospitals (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(180) NOT NULL,
+    address VARCHAR(255) NOT NULL,
+    city VARCHAR(80) NOT NULL,
+    phone VARCHAR(30),
+    email VARCHAR(180)
+);
+
+CREATE TABLE departments (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    hospital_id INT NOT NULL,
+    name VARCHAR(120) NOT NULL,
+    description TEXT,
+    FOREIGN KEY (hospital_id) REFERENCES hospitals (id)
+);
+
+CREATE TABLE doctors (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT UNIQUE NOT NULL,
+    hospital_id INT NOT NULL,
+    department_id INT NOT NULL,
+    specialization VARCHAR(120) NOT NULL,
+    consultation_fee DECIMAL(10, 2) DEFAULT 500,
+    is_available BOOLEAN DEFAULT TRUE,
+    FOREIGN KEY (user_id) REFERENCES users (id),
+    FOREIGN KEY (hospital_id) REFERENCES hospitals (id),
+    FOREIGN KEY (department_id) REFERENCES departments (id)
+);
+
+CREATE TABLE slots (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    doctor_id INT NOT NULL,
+    date DATE NOT NULL,
+    start_time TIME NOT NULL,
+    end_time TIME NOT NULL,
+    max_patients INT DEFAULT 10,
+    booked_count INT DEFAULT 0,
+    UNIQUE KEY uq_doctor_slot (doctor_id, date, start_time),
+    FOREIGN KEY (doctor_id) REFERENCES doctors (id)
+);
+
+CREATE TABLE appointments (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    patient_id INT NOT NULL,
+    doctor_id INT NOT NULL,
+    slot_id INT NOT NULL,
+    appointment_date DATE NOT NULL,
+    appointment_time TIME NOT NULL,
+    token_no VARCHAR(30),
+    status VARCHAR(30) DEFAULT 'booked',
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (patient_id) REFERENCES users (id),
+    FOREIGN KEY (doctor_id) REFERENCES doctors (id),
+    FOREIGN KEY (slot_id) REFERENCES slots (id)
+);
+
+CREATE TABLE queue (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    appointment_id INT UNIQUE NOT NULL,
+    patient_id INT NOT NULL,
+    doctor_id INT NOT NULL,
+    token_no VARCHAR(30) NOT NULL,
+    queue_position INT NOT NULL,
+    status VARCHAR(30) DEFAULT 'waiting',
+    checked_in_time DATETIME,
+    called_time DATETIME,
+    completed_time DATETIME,
+    FOREIGN KEY (appointment_id) REFERENCES appointments (id),
+    FOREIGN KEY (patient_id) REFERENCES users (id),
+    FOREIGN KEY (doctor_id) REFERENCES doctors (id)
+);
+
+CREATE TABLE e_slips (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    appointment_id INT UNIQUE NOT NULL,
+    qr_payload TEXT NOT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (appointment_id) REFERENCES appointments (id)
+);
+
+CREATE TABLE consultations (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    appointment_id INT UNIQUE NOT NULL,
+    doctor_id INT NOT NULL,
+    notes TEXT,
+    diagnosis TEXT,
+    prescription TEXT,
+    consultation_datetime DATETIME DEFAULT CURRENT_TIMESTAMP,
+    followup_date DATE,
+    FOREIGN KEY (appointment_id) REFERENCES appointments (id),
+    FOREIGN KEY (doctor_id) REFERENCES doctors (id)
+);
+
+CREATE TABLE notifications (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    type VARCHAR(50),
+    message TEXT NOT NULL,
+    is_read BOOLEAN DEFAULT FALSE,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users (id)
+);
+
+CREATE TABLE payments (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    appointment_id INT NOT NULL,
+    amount DECIMAL(10, 2) NOT NULL,
+    payment_mode VARCHAR(30) DEFAULT 'cash',
+    payment_status VARCHAR(30) DEFAULT 'pending',
+    payment_date DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (appointment_id) REFERENCES appointments (id)
+);
+
+CREATE TABLE feedback (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    appointment_id INT NOT NULL,
+    rating INT NOT NULL,
+    comment TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (appointment_id) REFERENCES appointments (id)
+);
+
+CREATE TABLE audit_logs (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT,
+    action VARCHAR(100) NOT NULL,
+    entity VARCHAR(100) NOT NULL,
+    entity_id INT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users (id)
+);
