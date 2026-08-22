@@ -1,0 +1,14 @@
+backend/.venv/
+backend/.env
+__pycache__/
+*.pyc
+*.pyo
+*.log
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+mysql-data/
+ml_models/*.pkl
+data/*.csv
+data/*.json
