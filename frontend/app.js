@@ -3,6 +3,29 @@ let token = localStorage.getItem("mq_token");
 let currentUser = JSON.parse(localStorage.getItem("mq_user") || "null");
 let active = "dashboard";
 let chart;
+const SAMPLE_HOSPITALS = [
+  {
+    name: "CityCare Multispeciality Hospital",
+    address: "Central Medical District",
+    distance: 1.8,
+    rating: 4.7,
+    emergency: true,
+  },
+  {
+    name: "MediLife General Hospital",
+    address: "Riverside Road",
+    distance: 3.2,
+    rating: 4.5,
+    emergency: true,
+  },
+  {
+    name: "Sunrise Heart & Wellness Centre",
+    address: "North Avenue",
+    distance: 5.6,
+    rating: 4.3,
+    emergency: false,
+  },
+];
 const $ = (s) => document.querySelector(s);
 const esc = (s) =>
   String(s ?? "").replace(
@@ -54,27 +77,20 @@ function renderNav() {
     currentUser.role === "patient"
       ? [
           ["dashboard", "grid-1x2", "Dashboard"],
-          ["book", "calendar-plus", "Book Appointment"],
           ["appointments", "calendar-check", "My Appointments"],
-          ["queue", "people", "Live Queue"],
           ["eslips", "qr-code", "E-Slips"],
           ["doctors", "person-badge", "Doctors"],
-          ["departments", "building", "Departments"],
-          ["notifications", "bell", "Notifications"],
-          ["profile", "person", "Profile"],
+          ["hospitals", "hospital", "Hospitals"],
         ]
       : currentUser.role === "doctor"
         ? [
             ["dashboard", "speedometer2", "Dashboard"],
             ["appointments", "calendar-check", "Appointments"],
-            ["queue", "people", "Live Queue"],
             ["slots", "clock", "Manage Slots"],
-            ["profile", "person", "Profile"],
           ]
         : [
             ["dashboard", "grid-1x2", "Dashboard"],
             ["doctors", "person-badge", "Doctors"],
-            ["departments", "building", "Departments"],
             ["analytics", "bar-chart-line", "Analytics"],
             ["appointments", "calendar-check", "Appointments"],
           ];
@@ -110,10 +126,12 @@ async function patientPage(c) {
     const next = d.appointments.find((x) =>
       ["booked", "checked_in", "called"].includes(x.status),
     );
-    c.innerHTML = `<div class="hero"><div><h1>Good Morning, ${esc(d.patient.name)}! 👋</h1><p>We're here to make your visit smooth and hassle-free.</p></div><div class="hero-art"><i class="bi bi-hospital"></i></div></div><div class="cards"><div class="action-card" onclick="go('book')"><i class="bi bi-calendar-plus"></i><h3>Book Appointment</h3><p>Find doctors & book your slot</p></div><div class="action-card" onclick="go('queue')"><i class="bi bi-signpost-2"></i><h3>Live Queue</h3><p>Check your token status</p></div><div class="action-card" onclick="go('eslips')"><i class="bi bi-qr-code"></i><h3>E-Slip</h3><p>View your E-Slip & QR code</p></div><div class="action-card" onclick="go('appointments')"><i class="bi bi-clock-history"></i><h3>My Appointments</h3><p>See your upcoming visits</p></div></div><div class="section-title">Today's Overview</div><div class="stats"><div class="stat-card"><span>Your Token Number</span><strong>${next?.token || "—"}</strong><div class="trend">Smart queue</div></div><div class="stat-card"><span>Estimated Waiting Time</span><strong>${next?.waiting_minutes ?? "—"} ${next ? "min" : ""}</strong><div class="trend">Updated live</div></div><div class="stat-card"><span>Appointment Status</span><strong style="font-size:18px;margin-top:12px">${next ? next.status.replace("_", " ") : "No visit"}</strong><div class="trend">Digital check-in</div></div><div class="stat-card"><span>Appointments</span><strong>${d.appointments.length}</strong><div class="trend">History & upcoming</div></div></div><div class="section-title">Hospital Insights</div><div class="grid2"><div class="panel"><h3>Patient Flow Overview</h3><div class="chart-wrap"><canvas id="flowChart"></canvas></div></div><div class="panel"><h3>Top Departments</h3><div class="chart-wrap"><canvas id="deptChart"></canvas></div></div></div>`;
-    makeCharts();
+    const queue = next ? await api("/patient/queue/" + next.id) : null;
+    c.innerHTML = `<div class="hero"><div><h1>Good Morning, ${esc(d.patient.name)}! 👋</h1><p>We're here to make your visit smooth and hassle-free.</p></div><div class="hero-art"><i class="bi bi-hospital"></i></div></div><div class="cards"><div class="action-card" onclick="go('appointments')"><i class="bi bi-clock-history"></i><h3>My Appointments</h3><p>See your upcoming visits</p></div><div class="action-card" onclick="go('book')"><i class="bi bi-calendar-plus"></i><h3>Book Appointment</h3><p>Find doctors & book your slot</p></div><div class="action-card" onclick="go('eslips')"><i class="bi bi-qr-code"></i><h3>E-Slip</h3><p>View your E-Slip & QR code</p></div></div><div class="section-title">Today's Overview</div><div class="stats"><div class="stat-card"><span>Your Token Number</span><strong>${next?.token || "—"}</strong><div class="trend">Smart queue</div></div><div class="stat-card"><span>Estimated Waiting Time</span><strong>${next?.waiting_minutes ?? "—"} ${next ? "min" : ""}</strong><div class="trend">Updated live</div></div><div class="stat-card"><span>Appointment Status</span><strong style="font-size:18px;margin-top:12px">${next ? next.status.replace("_", " ") : "No visit"}</strong><div class="trend">Digital check-in</div></div><div class="stat-card"><span>Appointments</span><strong>${d.appointments.length}</strong><div class="trend">History & upcoming</div></div></div><div class="section-title">Live Queue</div><div class="queue-live">${queue ? `<div style="color:var(--muted);font-size:12px">${esc(next.department)} · ${esc(next.doctor)}</div><div class="queue-number">${esc(queue.token || next.token)}</div><div style="margin:10px 0 20px">${queue.position ?? "—"} patients position · ${queue.waiting_minutes ?? "—"} min estimated wait</div><div class="progress-line"><span style="width:${Math.max(8, 100 - Math.min((queue.position || 1) * 8, 92))}%"></span></div><div class="d-flex justify-content-between mt-3" style="font-size:11px;color:var(--muted)"><span>Now serving: <b>${queue.now_serving || "—"}</b></span><span>Status: <b>${queue.status}</b></span></div>` : "No active queue. Book an appointment first."}</div>`;
   } else if (active === "book" || active === "doctors") {
     await renderBooking(c);
+  } else if (active === "hospitals") {
+    await renderHospitals(c);
   } else if (active === "appointments" || active === "eslips") {
     const d = await api("/patient/home");
     c.innerHTML = `<div class="section-title">${active === "appointments" ? "My Appointments" : "My E-Slips"}</div><div class="panel"><table class="table"><thead><tr><th>Doctor</th><th>OPD</th><th>Date</th><th>Token</th><th>Status</th><th></th></tr></thead><tbody>${d.appointments.map((a) => `<tr><td><b>${esc(a.doctor)}</b><br><small>${esc(a.specialization)}</small></td><td>${esc(a.department)}</td><td>${a.date} · ${a.time}</td><td><b>${esc(a.token || "—")}</b></td><td><span class="pill ${a.status === "completed" ? "green" : a.status === "checked_in" ? "purple" : "orange"}">${esc(a.status)}</span></td><td><button class="btn btn-sm btn-outline-primary" onclick="openSlip(${a.id})">${active === "eslips" ? "View E-Slip" : "Details"}</button></td></tr>`).join("") || '<tr><td colspan="6" class="empty">No appointments yet.</td></tr>'}</tbody></table></div>`;
@@ -136,6 +154,29 @@ async function patientPage(c) {
 async function renderBooking(c) {
   const docs = await api("/patient/doctors");
   c.innerHTML = `<div class="section-title">Find a Doctor</div><div class="doctor-grid">${docs.map((d) => `<div class="doctor-card"><div class="doctor-head"><div class="doc-avatar">${esc(d.name.replace("Dr. ", "")[0])}</div><div><h3>${esc(d.name)}</h3><p>${esc(d.specialization)}</p><p>${esc(d.department)} · ${esc(d.hospital)}</p></div></div><div class="d-flex justify-content-between mt-3"><small>Consultation</small><b>₹${d.fee}</b></div><button class="book" onclick="chooseDoctor(${d.id},'${esc(d.name)}')">View Availability</button></div>`).join("")}</div>`;
+}
+async function renderHospitals(c) {
+  c.innerHTML = '<div class="section-title">Hospitals Near You</div><div class="panel empty">Finding hospitals near your location...</div>';
+  let locationMessage = "Showing sample city hospitals. Your city data can be added later.";
+  let userLocation = null;
+
+  if (navigator.geolocation) {
+    try {
+      userLocation = await new Promise((resolve, reject) =>
+        navigator.geolocation.getCurrentPosition(resolve, reject, {
+          enableHighAccuracy: false,
+          timeout: 8000,
+        }),
+      );
+      locationMessage = "Sorted by distance from your current location.";
+    } catch {
+      locationMessage = "Location access was unavailable. Showing sample city hospitals.";
+    }
+  }
+
+  const hospitals = SAMPLE_HOSPITALS.slice().sort((a, b) => a.distance - b.distance);
+  c.innerHTML = `<div class="section-title">Hospitals Near You</div><div class="hospital-toolbar"><div><h2>Find trusted care nearby</h2><p>${locationMessage}</p></div><button class="btn btn-outline-primary" onclick="go('hospitals')"><i class="bi bi-crosshair"></i> Use my location</button></div><div class="hospital-grid">${hospitals.map((hospital) => `<article class="hospital-card"><div class="hospital-icon"><i class="bi bi-hospital"></i></div><div class="hospital-card-body"><div class="hospital-card-heading"><h3>${esc(hospital.name)}</h3><span class="hospital-rating"><i class="bi bi-star-fill"></i> ${hospital.rating}</span></div><p class="hospital-address"><i class="bi bi-geo-alt"></i> ${esc(hospital.address)}</p><div class="hospital-meta"><span><i class="bi bi-signpost-2"></i> ${hospital.distance} km away</span>${hospital.emergency ? '<span class="hospital-emergency">24/7 Emergency</span>' : ""}</div><a class="hospital-directions" href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(hospital.name + " " + hospital.address)}" target="_blank" rel="noopener"><i class="bi bi-arrow-up-right"></i> Get directions</a></div></article>`).join("")}</div>`;
+  void userLocation;
 }
 async function chooseDoctor(id, name) {
   const dateStr = new Date().toISOString().slice(0, 10);
@@ -266,83 +307,13 @@ async function addSlot() {
 async function adminPage(c) {
   if (active === "dashboard" || active === "analytics") {
     const d = await api("/admin/dashboard");
-    c.innerHTML = `<div class="hero"><h1>Hospital Analytics</h1><p>OPD reports, queue performance, patient flow and operational insights.</p></div><div class="section-title">Today's Overview</div><div class="stats"><div class="stat-card"><span>Today's Patients</span><strong>${d.kpis.patients_today}</strong><div class="trend">Live OPD count</div></div><div class="stat-card"><span>Completed</span><strong>${d.kpis.completed}</strong><div class="trend">Consultations</div></div><div class="stat-card"><span>Waiting</span><strong>${d.kpis.waiting}</strong><div class="trend">Current queue</div></div><div class="stat-card"><span>No-show Rate</span><strong>${d.kpis.no_show_rate}%</strong><div class="trend">Operational metric</div></div></div><div class="section-title">Analytics</div><div class="grid2"><div class="panel"><h3>Department Comparison</h3><div class="chart-wrap"><canvas id="adminDept"></canvas></div></div><div class="panel"><h3>ML Model Snapshot</h3><div class="stat-card" style="box-shadow:none"><span>Waiting-time model</span><strong>Random Forest</strong><div class="trend">Queue size · hour · consultation duration · doctors</div></div><div class="stat-card" style="box-shadow:none"><span>No-show model</span><strong>Random Forest</strong><div class="trend">Lead time · history · cancellations</div></div></div></div>`;
-    setTimeout(() => {
-      new Chart($("#adminDept"), {
-        type: "doughnut",
-        data: {
-          labels: d.department_breakdown.map((x) => x.department),
-          datasets: [{ data: d.department_breakdown.map((x) => x.count) }],
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: { legend: { position: "bottom" } },
-        },
-      });
-    }, 50);
+    c.innerHTML = `<div class="hero"><h1>Hospital Analytics</h1><p>OPD reports, queue performance and operational insights.</p></div><div class="section-title">Today's Overview</div><div class="stats"><div class="stat-card"><span>Today's Patients</span><strong>${d.kpis.patients_today}</strong><div class="trend">Live OPD count</div></div><div class="stat-card"><span>Completed</span><strong>${d.kpis.completed}</strong><div class="trend">Consultations</div></div><div class="stat-card"><span>Waiting</span><strong>${d.kpis.waiting}</strong><div class="trend">Current queue</div></div><div class="stat-card"><span>No-show Rate</span><strong>${d.kpis.no_show_rate}%</strong><div class="trend">Operational metric</div></div></div><div class="section-title">Model Snapshot</div><div class="panel"><div class="stats"><div class="stat-card" style="box-shadow:none"><span>Waiting-time model</span><strong>Random Forest</strong><div class="trend">Queue size · hour · consultation duration · doctors</div></div><div class="stat-card" style="box-shadow:none"><span>No-show model</span><strong>Random Forest</strong><div class="trend">Lead time · history · cancellations</div></div></div></div>`;
   } else if (active === "doctors") {
     const ds = await api("/admin/doctors");
     c.innerHTML = `<div class="section-title">Manage Doctors</div><div class="panel">${queueTable(ds, false)}</div>`;
   } else
     c.innerHTML =
       '<div class="panel empty">Administrative management screen.</div>';
-}
-function makeCharts() {
-  setTimeout(() => {
-    if (chart) chart.destroy();
-    chart = new Chart($("#flowChart"), {
-      type: "line",
-      data: {
-        labels: [
-          "6 AM",
-          "8 AM",
-          "10 AM",
-          "12 PM",
-          "2 PM",
-          "4 PM",
-          "6 PM",
-          "8 PM",
-        ],
-        datasets: [
-          {
-            label: "Patients",
-            data: [28, 52, 86, 119, 102, 130, 72, 22],
-            fill: true,
-            tension: 0.35,
-          },
-        ],
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: { legend: { display: false } },
-      },
-    });
-    new Chart($("#deptChart"), {
-      type: "doughnut",
-      data: {
-        labels: [
-          "Dermatology",
-          "Cardiology",
-          "General Medicine",
-          "Orthopedics",
-          "Others",
-        ],
-        datasets: [{ data: [32, 28, 20, 12, 8] }],
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-          legend: {
-            position: "bottom",
-            labels: { boxWidth: 10, font: { size: 10 } },
-          },
-        },
-      },
-    });
-  }, 50);
 }
 function showModal(html) {
   let x = document.createElement("div");
