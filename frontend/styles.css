@@ -1,6 +1,6 @@
 :root {
   --bg: white;
-  --surface: #e8ebf3;
+  --surface: #ffffff;
   --surface-soft: #edf0f7;
   --surface-strong: #dde2ef;
   --primary: #803fcb;
@@ -15,8 +15,8 @@
   --radius-md: 20px;
   --radius-sm: 14px;
   --shadow-raised:
-    -12px -12px 24px rgba(255, 255, 255, 0.95),
-    12px 12px 28px rgba(145, 156, 185, 0.38);
+    -10px -10px 20px rgba(255, 255, 255, 0.95),
+    10px 10px 20px rgba(145, 156, 185, 0.38);
   --shadow-raised-soft:
     -7px -7px 14px rgba(255, 255, 255, 0.95),
     7px 7px 18px rgba(145, 156, 185, 0.28);
