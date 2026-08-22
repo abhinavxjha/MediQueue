@@ -4,13 +4,13 @@ from datetime import date, time, timedelta
 
 from sqlalchemy import select
 
-from app.auth import hash_password
-from app.database import Base, SessionLocal, engine
-from app.models import Department, Doctor, Hospital, Slot, User
+from .auth import hash_password
+from .database import Base, SessionLocal, engine
+from .models import Department, Doctor, Hospital, Slot, User
 
 Base.metadata.create_all(bind=engine)
 
-CATALOG_PATH = Path(__file__).resolve().parent.parent / 'data' / 'hospital_catalog.json'
+CATALOG_PATH = Path(__file__).resolve().parents[2] / 'data' / 'hospital_catalog.json'
 
 
 def load_catalog():
@@ -21,15 +21,11 @@ def load_catalog():
 def get_or_create_user(db, name, email, role='doctor'):
     user = db.scalar(select(User).where(User.email == email))
     if user:
-        default_pwd = 'Patient@123' if role == 'patient' else ('Admin@123' if role == 'admin' else ('Hospital@123' if role == 'hospital' else 'Doctor@123'))
-        user.password_hash = hash_password(default_pwd)
-        db.flush()
         return user
-    default_pwd = 'Patient@123' if role == 'patient' else ('Admin@123' if role == 'admin' else ('Hospital@123' if role == 'hospital' else 'Doctor@123'))
     user = User(
         name=name,
         email=email,
-        password_hash=hash_password(default_pwd),
+        password_hash=hash_password('Doctor@123'),
         role=role,
     )
     db.add(user)
@@ -71,7 +67,7 @@ def seed_catalog(db):
                 name = doctor_details['name']
                 specialization = doctor_details['specialization']
                 fee = doctor_details['fee']
-                email = f"{name.lower().replace('dr. ', '').replace(' ', '.')}@querly.com"
+                email = f"{name.lower().replace('dr. ', '').replace(' ', '.')}@mediqueue.local"
                 user = get_or_create_user(db, name, email)
                 doctor = db.scalar(select(Doctor).where(Doctor.user_id == user.id))
                 if not doctor:
@@ -107,11 +103,10 @@ def seed_catalog(db):
 
 db = SessionLocal()
 try:
-    get_or_create_user(db, 'Querly Admin', 'admin@querly.com', 'admin')
-    get_or_create_user(db, 'Yashika Gupta', 'patient@querly.com', 'patient')
-    get_or_create_user(db, 'Hospital Desk', 'hospital@querly.com', 'hospital')
+    get_or_create_user(db, 'MediQueue Admin', 'admin@mediqueue.local', 'admin')
+    get_or_create_user(db, 'Yashika Gupta', 'patient@mediqueue.local', 'patient')
     seed_catalog(db)
     db.commit()
-    print('Seeded Querly hospital, department, doctor, slot, and hospital desk user catalog.')
+    print('Seeded MediQueue hospital, department, doctor and slot catalog.')
 finally:
     db.close()

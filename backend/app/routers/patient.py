@@ -8,7 +8,7 @@ from ..schemas import AppointmentIn,CheckInIn,FeedbackIn
 from ..auth import require_roles
 from ..services.queue import create_queue_entry,estimated_wait,refresh_positions
 from ..services.slips import qr_data_url
-router=APIRouter(prefix='/api/patient',tags=['Patient']); patient_dep=require_roles('patient', 'doctor', 'admin')
+router=APIRouter(prefix='/api/patient',tags=['Patient']); patient_dep=require_roles('patient')
 
 # Temporary Feature: demo-only appointment completion after the frontend timer expires.
 @router.post('/appointments/{appointment_id}/temporary-complete')
@@ -71,45 +71,8 @@ def doctors(hospital_id:int|None=None,department_id:int|None=None,q:str|None=Non
         out.append({'id':d.id,'name':u.name,'specialization':d.specialization,'department':dep.name,'hospital':h.name,'hospital_id':h.id,'department_id':dep.id,'fee':d.consultation_fee,'available':d.is_available})
     return out
 @router.get('/slots')
-def slots(doctor_id: int, selected_date: date | None = None, db: Session = Depends(get_db)):
-    if not selected_date:
-        selected_date = date.today()
-    rows = db.scalars(
-        select(Slot)
-        .where(Slot.doctor_id == doctor_id, Slot.date == selected_date)
-        .order_by(Slot.start_time)
-    ).all()
-    if not rows:
-        doctor = db.get(Doctor, doctor_id)
-        if doctor:
-            from datetime import time
-            for hour in (9, 10, 11, 12, 14, 15, 16, 17):
-                s = Slot(
-                    doctor_id=doctor.id,
-                    date=selected_date,
-                    start_time=time(hour, 0),
-                    end_time=time(hour, 30),
-                    max_patients=10,
-                    booked_count=0,
-                )
-                db.add(s)
-            db.commit()
-            rows = db.scalars(
-                select(Slot)
-                .where(Slot.doctor_id == doctor_id, Slot.date == selected_date)
-                .order_by(Slot.start_time)
-            ).all()
-    return [
-        {
-            'id': s.id,
-            'start_time': s.start_time.strftime('%H:%M'),
-            'end_time': s.end_time.strftime('%H:%M'),
-            'max_patients': s.max_patients,
-            'booked_count': s.booked_count,
-            'available': s.booked_count < s.max_patients,
-        }
-        for s in rows
-    ]
+def slots(doctor_id:int,selected_date:date,db:Session=Depends(get_db)):
+    return [{'id':s.id,'start_time':s.start_time.strftime('%H:%M'),'end_time':s.end_time.strftime('%H:%M'),'max_patients':s.max_patients,'booked_count':s.booked_count,'available':s.booked_count<s.max_patients} for s in db.scalars(select(Slot).where(Slot.doctor_id==doctor_id,Slot.date==selected_date).order_by(Slot.start_time)).all()]
 @router.post('/appointments')
 def book(data:AppointmentIn,user=Depends(patient_dep),db:Session=Depends(get_db)):
     slot=db.get(Slot,data.slot_id); doctor=db.get(Doctor,data.doctor_id)
