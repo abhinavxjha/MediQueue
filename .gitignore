@@ -11,4 +11,4 @@ Thumbs.db
 mysql-data/
 ml_models/*.pkl
 data/*.csv
-data/*.json
+!data/hospital_catalog.json

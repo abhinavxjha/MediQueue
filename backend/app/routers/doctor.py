@@ -32,4 +32,4 @@ def add_slot(data:SlotIn,user=Depends(doc_dep),db:Session=Depends(get_db)):
     s=Slot(doctor_id=d.id,**data.model_dump()); db.add(s); db.commit(); db.refresh(s); return {'id':s.id,'message':'Slot created'}
 @router.get('/appointments')
 def appointments(user=Depends(doc_dep),db:Session=Depends(get_db)):
-    d=get_doctor(user,db); rows=db.scalars(select(Appointment).where(Appointment.doctor_id==d.id).order_by(Appointment.appointment_date.desc(),Appointment.appointment_time)).all(); return [{'id':a.id,'date':str(a.appointment_date),'time':a.appointment_time.strftime('%H:%M'),'token':a.token_no,'status':a.status,'patient_id':a.patient_id} for a in rows]
+    d=get_doctor(user,db); rows=db.scalars(select(Appointment).where(Appointment.doctor_id==d.id).order_by(Appointment.appointment_date.desc(),Appointment.appointment_time)).all(); return [{'id':a.id,'date':str(a.appointment_date),'time':a.appointment_time.strftime('%H:%M'),'token':a.token_no,'status':a.status,'patient_id':a.patient_id,'symptoms':a.symptoms} for a in rows]

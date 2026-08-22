@@ -64,6 +64,7 @@ CREATE TABLE appointments (
     appointment_time TIME NOT NULL,
     token_no VARCHAR(30),
     status VARCHAR(30) DEFAULT 'booked',
+    symptoms TEXT,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (patient_id) REFERENCES users (id),
     FOREIGN KEY (doctor_id) REFERENCES doctors (id),

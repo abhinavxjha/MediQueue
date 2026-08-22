@@ -3,29 +3,7 @@ let token = localStorage.getItem("mq_token");
 let currentUser = JSON.parse(localStorage.getItem("mq_user") || "null");
 let active = "dashboard";
 let chart;
-const SAMPLE_HOSPITALS = [
-  {
-    name: "CityCare Multispeciality Hospital",
-    address: "Central Medical District",
-    distance: 1.8,
-    rating: 4.7,
-    emergency: true,
-  },
-  {
-    name: "MediLife General Hospital",
-    address: "Riverside Road",
-    distance: 3.2,
-    rating: 4.5,
-    emergency: true,
-  },
-  {
-    name: "Sunrise Heart & Wellness Centre",
-    address: "North Avenue",
-    distance: 5.6,
-    rating: 4.3,
-    emergency: false,
-  },
-];
+let temporaryAppointmentTimer;
 const $ = (s) => document.querySelector(s);
 const esc = (s) =>
   String(s ?? "").replace(
@@ -78,9 +56,9 @@ function renderNav() {
       ? [
           ["dashboard", "grid-1x2", "Dashboard"],
           ["appointments", "calendar-check", "My Appointments"],
-          ["eslips", "qr-code", "E-Slips"],
           ["doctors", "person-badge", "Doctors"],
           ["hospitals", "hospital", "Hospitals"],
+          ["history", "clock-history", "History"],
         ]
       : currentUser.role === "doctor"
         ? [
@@ -111,6 +89,8 @@ function renderNav() {
 }
 async function render() {
   const c = $("#content");
+  clearInterval(temporaryAppointmentTimer);
+  temporaryAppointmentTimer = null;
   c.innerHTML = '<div class="empty">Loading MediQueue...</div>';
   try {
     if (currentUser.role === "patient") await patientPage(c);
@@ -120,6 +100,45 @@ async function render() {
     c.innerHTML = `<div class="panel empty"><i class="bi bi-exclamation-triangle"></i><br>${esc(e.message)}</div>`;
   }
 }
+function startTemporaryAppointmentTimer(appointments) {
+  if (temporaryAppointmentTimer || !appointments.some((appointment) => appointment.status !== "completed")) return;
+  temporaryAppointmentTimer = setInterval(async () => {
+    const appointment = appointments.find((item) => item.status !== "completed");
+    if (!appointment) return;
+    try {
+      await api(`/patient/appointments/${appointment.id}/temporary-complete`, { method: "POST" });
+      toast("Temporary demo appointment moved to History");
+      render();
+    } catch (e) {
+      toast(e.message);
+    }
+  }, 45000);
+}
+async function openAppointmentDetails(id) {
+  const data = await api("/patient/home");
+  const appointment = data.appointments.find((item) => item.id === id);
+  if (!appointment) return toast("Appointment not found");
+  showModal(`<button class="close" onclick="closeModal()">×</button><div class="detail-modal"><span class="eyebrow">APPOINTMENT DETAILS</span><h3>${esc(appointment.doctor)}</h3><p>${esc(appointment.specialization)} · ${esc(appointment.department)}</p><div class="detail-list"><div><small>Hospital</small><strong>${esc(appointment.hospital)}</strong></div><div><small>Date and time</small><strong>${appointment.date} · ${appointment.time}</strong></div><div><small>Token and fee</small><strong>${esc(appointment.token || "—")} · ₹${appointment.fee}</strong></div><div><small>Symptoms</small><strong>${esc(appointment.symptoms || "Not provided")}</strong></div><div><small>Status</small><strong>${esc(appointment.status)}</strong></div></div><button class="primary-btn" onclick="downloadSlip(${id})"><i class="bi bi-download"></i> Download E-Slip</button></div>`);
+}
+async function openReport(id) {
+  try {
+    const report = await api(`/patient/report/${id}`);
+    showModal(`<button class="close" onclick="closeModal()">×</button><div class="detail-modal"><span class="eyebrow">CONSULTATION REPORT</span><h3>${esc(report.doctor)}</h3><p>${esc(report.specialization)} · ${esc(report.hospital)}</p><div class="detail-list"><div><small>Symptoms</small><strong>${esc(report.symptoms || "Not provided")}</strong></div><div><small>Diagnosis</small><strong>${esc(report.diagnosis || "Not recorded")}</strong></div><div><small>Doctor notes</small><strong>${esc(report.notes || "Not recorded")}</strong></div><div><small>Prescription</small><strong>${esc(report.prescription || "Not recorded")}</strong></div><div><small>Follow-up</small><strong>${esc(report.followup_date || "Not scheduled")}</strong></div></div><button class="primary-btn" onclick="downloadReport(${id})"><i class="bi bi-download"></i> Download Full Report</button></div>`);
+  } catch (e) {
+    toast(e.message);
+  }
+}
+async function downloadReport(id) {
+  const response = await fetch(API_BASE + `/slips/${id}/report.pdf`, { headers: { Authorization: `Bearer ${token}` } });
+  if (!response.ok) return toast("Could not download report");
+  const blob = await response.blob();
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = `mediqueue-report-${id}.pdf`;
+  link.click();
+  URL.revokeObjectURL(url);
+}
 async function patientPage(c) {
   if (active === "dashboard") {
     const d = await api("/patient/home");
@@ -127,14 +146,19 @@ async function patientPage(c) {
       ["booked", "checked_in", "called"].includes(x.status),
     );
     const queue = next ? await api("/patient/queue/" + next.id) : null;
-    c.innerHTML = `<div class="hero"><div><h1>Good Morning, ${esc(d.patient.name)}! 👋</h1><p>We're here to make your visit smooth and hassle-free.</p></div><div class="hero-art"><i class="bi bi-hospital"></i></div></div><div class="cards"><div class="action-card" onclick="go('appointments')"><i class="bi bi-clock-history"></i><h3>My Appointments</h3><p>See your upcoming visits</p></div><div class="action-card" onclick="go('book')"><i class="bi bi-calendar-plus"></i><h3>Book Appointment</h3><p>Find doctors & book your slot</p></div><div class="action-card" onclick="go('eslips')"><i class="bi bi-qr-code"></i><h3>E-Slip</h3><p>View your E-Slip & QR code</p></div></div><div class="section-title">Today's Overview</div><div class="stats"><div class="stat-card"><span>Your Token Number</span><strong>${next?.token || "—"}</strong><div class="trend">Smart queue</div></div><div class="stat-card"><span>Estimated Waiting Time</span><strong>${next?.waiting_minutes ?? "—"} ${next ? "min" : ""}</strong><div class="trend">Updated live</div></div><div class="stat-card"><span>Appointment Status</span><strong style="font-size:18px;margin-top:12px">${next ? next.status.replace("_", " ") : "No visit"}</strong><div class="trend">Digital check-in</div></div><div class="stat-card"><span>Appointments</span><strong>${d.appointments.length}</strong><div class="trend">History & upcoming</div></div></div><div class="section-title">Live Queue</div><div class="queue-live">${queue ? `<div style="color:var(--muted);font-size:12px">${esc(next.department)} · ${esc(next.doctor)}</div><div class="queue-number">${esc(queue.token || next.token)}</div><div style="margin:10px 0 20px">${queue.position ?? "—"} patients position · ${queue.waiting_minutes ?? "—"} min estimated wait</div><div class="progress-line"><span style="width:${Math.max(8, 100 - Math.min((queue.position || 1) * 8, 92))}%"></span></div><div class="d-flex justify-content-between mt-3" style="font-size:11px;color:var(--muted)"><span>Now serving: <b>${queue.now_serving || "—"}</b></span><span>Status: <b>${queue.status}</b></span></div>` : "No active queue. Book an appointment first."}</div>`;
+    c.innerHTML = `<div class="hero"><div><h1>Good Morning, ${esc(d.patient.name)}! 👋</h1><p>We're here to make your visit smooth and hassle-free.</p></div><div class="hero-art"><i class="bi bi-hospital"></i></div></div><div class="cards"><div class="action-card" onclick="go('appointments')"><i class="bi bi-clock-history"></i><h3>My Appointments</h3><p>See your upcoming visits</p></div><div class="action-card" onclick="go('book')"><i class="bi bi-calendar-plus"></i><h3>Book Appointment</h3><p>Find doctors & book your slot</p></div><div class="action-card" onclick="go('history')"><i class="bi bi-clock-history"></i><h3>Medical History</h3><p>Review completed consultations</p></div></div><div class="section-title">Today's Overview</div><div class="stats"><div class="stat-card"><span>Your Token Number</span><strong>${next?.token || "—"}</strong><div class="trend">Smart queue</div></div><div class="stat-card"><span>Estimated Waiting Time</span><strong>${next?.waiting_minutes ?? "—"} ${next ? "min" : ""}</strong><div class="trend">Updated live</div></div><div class="stat-card"><span>Appointment Status</span><strong style="font-size:18px;margin-top:12px">${next ? next.status.replace("_", " ") : "No visit"}</strong><div class="trend">Digital check-in</div></div><div class="stat-card"><span>Appointments</span><strong>${d.appointments.length}</strong><div class="trend">History & upcoming</div></div></div><div class="section-title">Live Queue</div><div class="queue-live">${queue ? `<div style="color:var(--muted);font-size:12px">${esc(next.department)} · ${esc(next.doctor)}</div><div class="queue-number">${esc(queue.token || next.token)}</div><div style="margin:10px 0 20px">${queue.position ?? "—"} patients position · ${queue.waiting_minutes ?? "—"} min estimated wait</div><div class="progress-line"><span style="width:${Math.max(8, 100 - Math.min((queue.position || 1) * 8, 92))}%"></span></div><div class="d-flex justify-content-between mt-3" style="font-size:11px;color:var(--muted)"><span>Now serving: <b>${queue.now_serving || "—"}</b></span><span>Status: <b>${queue.status}</b></span></div>` : "No active queue. Book an appointment first."}</div>`;
   } else if (active === "book" || active === "doctors") {
     await renderBooking(c);
   } else if (active === "hospitals") {
     await renderHospitals(c);
-  } else if (active === "appointments" || active === "eslips") {
+  } else if (active === "appointments") {
     const d = await api("/patient/home");
-    c.innerHTML = `<div class="section-title">${active === "appointments" ? "My Appointments" : "My E-Slips"}</div><div class="panel"><table class="table"><thead><tr><th>Doctor</th><th>OPD</th><th>Date</th><th>Token</th><th>Status</th><th></th></tr></thead><tbody>${d.appointments.map((a) => `<tr><td><b>${esc(a.doctor)}</b><br><small>${esc(a.specialization)}</small></td><td>${esc(a.department)}</td><td>${a.date} · ${a.time}</td><td><b>${esc(a.token || "—")}</b></td><td><span class="pill ${a.status === "completed" ? "green" : a.status === "checked_in" ? "purple" : "orange"}">${esc(a.status)}</span></td><td><button class="btn btn-sm btn-outline-primary" onclick="openSlip(${a.id})">${active === "eslips" ? "View E-Slip" : "Details"}</button></td></tr>`).join("") || '<tr><td colspan="6" class="empty">No appointments yet.</td></tr>'}</tbody></table></div>`;
+    c.innerHTML = `<div class="section-title">My Appointments</div><div class="panel"><table class="table"><thead><tr><th>Doctor</th><th>OPD</th><th>Date</th><th>Token</th><th>Status</th><th>Actions</th></tr></thead><tbody>${d.appointments.filter((a) => a.status !== "completed").map((a) => `<tr><td><b>${esc(a.doctor)}</b><br><small>${esc(a.specialization)}</small></td><td>${esc(a.department)}</td><td>${a.date} · ${a.time}</td><td><b>${esc(a.token || "—")}</b></td><td><span class="pill ${a.status === "checked_in" ? "purple" : "orange"}">${esc(a.status)}</span></td><td class="appointment-actions"><button class="btn btn-sm btn-outline-primary" onclick="openAppointmentDetails(${a.id})">View details</button><button class="btn btn-sm btn-outline-primary" onclick="downloadSlip(${a.id})"><i class="bi bi-download"></i> Download</button></td></tr>`).join("") || '<tr><td colspan="6" class="empty">No active appointments. Completed visits appear in History.</td></tr>'}</tbody></table></div><div class="temporary-notice"><i class="bi bi-hourglass-split"></i> Temporary Feature: demo appointments are moved to History after 45 seconds.</div>`;
+    startTemporaryAppointmentTimer(d.appointments);
+  } else if (active === "history") {
+    const d = await api("/patient/home");
+    const history = d.appointments.filter((appointment) => appointment.status === "completed");
+    c.innerHTML = `<div class="section-title">Medical History</div><div class="history-intro">Your completed appointments and consultation records in one place.</div><div class="history-list">${history.map((a) => `<article class="history-card"><div class="history-card-head"><div><span class="eyebrow">${a.date} · ${a.time}</span><h3>${esc(a.doctor)}</h3><p>${esc(a.specialization)} · ${esc(a.department)}</p></div><span class="pill green">Completed</span></div><div class="history-grid"><div><small>Hospital</small><strong>${esc(a.hospital)}</strong></div><div><small>Token / fee</small><strong>${esc(a.token || "—")} · ₹${a.fee}</strong></div><div><small>Symptoms</small><strong>${esc(a.symptoms || "Not provided")}</strong></div><div><small>Diagnosis</small><strong>${esc(a.consultation?.diagnosis || "Not recorded")}</strong></div><div><small>Doctor notes</small><strong>${esc(a.consultation?.notes || "Not recorded")}</strong></div><div><small>Prescription</small><strong>${esc(a.consultation?.prescription || "Not recorded")}</strong></div></div>${a.consultation?.followup_date ? `<div class="history-followup"><i class="bi bi-calendar2-check"></i> Follow-up recommended: ${esc(a.consultation.followup_date)}</div>` : ""}<div class="history-actions"><button class="btn btn-sm btn-outline-primary" onclick="openReport(${a.id})"><i class="bi bi-file-earmark-medical"></i> View Report</button><button class="btn btn-sm btn-outline-primary" onclick="downloadReport(${a.id})"><i class="bi bi-download"></i> Download</button></div></article>`).join("") || '<div class="panel empty">Completed appointment history will appear here after a consultation.</div>'}</div>`;
   } else if (active === "queue") {
     const d = await api("/patient/home");
     const a = d.appointments.find((x) =>
@@ -151,32 +175,19 @@ async function patientPage(c) {
     c.innerHTML = `<div class="panel empty">${esc(active)} is ready for the next module.</div>`;
   }
 }
-async function renderBooking(c) {
-  const docs = await api("/patient/doctors");
+async function renderBooking(c, departmentId = null) {
+  const docs = await api(`/patient/doctors${departmentId ? `?department_id=${departmentId}` : ""}`);
   c.innerHTML = `<div class="section-title">Find a Doctor</div><div class="doctor-grid">${docs.map((d) => `<div class="doctor-card"><div class="doctor-head"><div class="doc-avatar">${esc(d.name.replace("Dr. ", "")[0])}</div><div><h3>${esc(d.name)}</h3><p>${esc(d.specialization)}</p><p>${esc(d.department)} · ${esc(d.hospital)}</p></div></div><div class="d-flex justify-content-between mt-3"><small>Consultation</small><b>₹${d.fee}</b></div><button class="book" onclick="chooseDoctor(${d.id},'${esc(d.name)}')">View Availability</button></div>`).join("")}</div>`;
 }
 async function renderHospitals(c) {
   c.innerHTML = '<div class="section-title">Hospitals Near You</div><div class="panel empty">Finding hospitals near your location...</div>';
-  let locationMessage = "Showing sample city hospitals. Your city data can be added later.";
-  let userLocation = null;
-
-  if (navigator.geolocation) {
-    try {
-      userLocation = await new Promise((resolve, reject) =>
-        navigator.geolocation.getCurrentPosition(resolve, reject, {
-          enableHighAccuracy: false,
-          timeout: 8000,
-        }),
-      );
-      locationMessage = "Sorted by distance from your current location.";
-    } catch {
-      locationMessage = "Location access was unavailable. Showing sample city hospitals.";
-    }
-  }
-
-  const hospitals = SAMPLE_HOSPITALS.slice().sort((a, b) => a.distance - b.distance);
-  c.innerHTML = `<div class="section-title">Hospitals Near You</div><div class="hospital-toolbar"><div><h2>Find trusted care nearby</h2><p>${locationMessage}</p></div><button class="btn btn-outline-primary" onclick="go('hospitals')"><i class="bi bi-crosshair"></i> Use my location</button></div><div class="hospital-grid">${hospitals.map((hospital) => `<article class="hospital-card"><div class="hospital-icon"><i class="bi bi-hospital"></i></div><div class="hospital-card-body"><div class="hospital-card-heading"><h3>${esc(hospital.name)}</h3><span class="hospital-rating"><i class="bi bi-star-fill"></i> ${hospital.rating}</span></div><p class="hospital-address"><i class="bi bi-geo-alt"></i> ${esc(hospital.address)}</p><div class="hospital-meta"><span><i class="bi bi-signpost-2"></i> ${hospital.distance} km away</span>${hospital.emergency ? '<span class="hospital-emergency">24/7 Emergency</span>' : ""}</div><a class="hospital-directions" href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(hospital.name + " " + hospital.address)}" target="_blank" rel="noopener"><i class="bi bi-arrow-up-right"></i> Get directions</a></div></article>`).join("")}</div>`;
-  void userLocation;
+  const hospitals = await api("/patient/hospitals");
+  c.innerHTML = `<div class="section-title">Hospitals Near You</div><div class="hospital-toolbar"><div><h2>Find trusted care nearby</h2><p>Browse departments and doctors connected to the MediQueue catalog.</p></div></div><div class="hospital-grid">${hospitals.map((hospital) => { const doctorCount = hospital.departments.reduce((count, department) => count + department.doctors.length, 0); return `<article class="hospital-card"><div class="hospital-icon"><i class="bi bi-hospital"></i></div><div class="hospital-card-body"><div class="hospital-card-heading"><h3>${esc(hospital.name)}</h3><span class="hospital-rating">${esc(hospital.city)}</span></div><p class="hospital-address"><i class="bi bi-geo-alt"></i> ${esc(hospital.address)}</p><div class="hospital-meta"><span><i class="bi bi-people"></i> ${doctorCount} doctors</span><span>${hospital.departments.length} departments</span></div><div class="hospital-departments">${hospital.departments.map((department) => `<button class="btn btn-sm btn-outline-primary" onclick="goToDepartment(${department.id})">${esc(department.name)} (${department.doctors.length})</button>`).join("")}</div><a class="hospital-directions" href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(hospital.name + " " + hospital.address)}" target="_blank" rel="noopener"><i class="bi bi-arrow-up-right"></i> Get directions</a><small>${esc(hospital.phone || "")} · ${esc(hospital.email || "")}</small></div></article>`; }).join("")}</div>`;
+}
+function goToDepartment(departmentId) {
+  active = "doctors";
+  renderNav();
+  renderBooking($("#content"), departmentId);
 }
 async function chooseDoctor(id, name) {
   const dateStr = new Date().toISOString().slice(0, 10);
@@ -184,14 +195,14 @@ async function chooseDoctor(id, name) {
     `/patient/slots?doctor_id=${id}&selected_date=${dateStr}`,
   );
   showModal(
-    `<button class="close" onclick="closeModal()">×</button><h3>Book with ${esc(name)}</h3><p class="text-muted small">Today · Select an available slot</p><div class="slot-list">${slots.map((s) => `<button class="slot ${s.available ? "" : "disabled"}" ${s.available ? "" : "disabled"} onclick="book(${id},${s.id})">${s.start_time} · ${s.booked_count}/${s.max_patients}</button>`).join("") || '<div class="empty">No slots available today.</div>'}</div>`,
+    `<button class="close" onclick="closeModal()">×</button><h3>Book with ${esc(name)}</h3><p class="text-muted small">Today · Tell the doctor briefly what you are experiencing</p><label class="small fw-bold" for="symptoms">Symptoms</label><textarea id="symptoms" class="form-control my-2" maxlength="2000" rows="3" placeholder="Example: headache and mild fever since yesterday"></textarea><div class="slot-list">${slots.map((s) => `<button class="slot ${s.available ? "" : "disabled"}" ${s.available ? "" : "disabled"} onclick="book(${id},${s.id})">${s.start_time} · ${s.booked_count}/${s.max_patients}</button>`).join("") || '<div class="empty">No slots available today.</div>'}</div>`,
   );
 }
 async function book(doctorId, slotId) {
   try {
     const r = await api("/patient/appointments", {
       method: "POST",
-      body: JSON.stringify({ doctor_id: doctorId, slot_id: slotId }),
+      body: JSON.stringify({ doctor_id: doctorId, slot_id: slotId, symptoms: $("#symptoms")?.value.trim() || null }),
     });
     closeModal();
     toast(`Appointment booked. Token ${r.token}`);
@@ -255,7 +266,7 @@ async function doctorPage(c) {
 }
 function queueTable(rows, doctor) {
   if (!rows.length) return '<div class="empty">No records.</div>';
-  return `<table class="table"><thead><tr><th>Token</th><th>${doctor ? "Patient" : "Date"}</th><th>${doctor ? "Position" : "Time"}</th><th>Status</th><th></th></tr></thead><tbody>${rows.map((r) => `<tr><td><b>${esc(r.token || r.token_no || "—")}</b></td><td>${doctor ? esc(r.patient_id || "Patient") : esc(r.date)}</td><td>${doctor ? esc(r.position || "—") : esc(r.time)}</td><td><span class="pill purple">${esc(r.status)}</span></td><td>${doctor && r.status === "called" ? `<button class="btn btn-sm btn-success" onclick="completePatient(${r.id})">Complete</button>` : ""}</td></tr>`).join("")}</tbody></table>`;
+  return `<table class="table"><thead><tr><th>Token</th><th>${doctor ? "Patient" : "Date"}</th><th>${doctor ? "Position" : "Time"}</th>${doctor ? "" : "<th>Symptoms</th>"}<th>Status</th><th></th></tr></thead><tbody>${rows.map((r) => `<tr><td><b>${esc(r.token || r.token_no || "—")}</b></td><td>${doctor ? esc(r.patient_id || "Patient") : esc(r.date)}</td><td>${doctor ? esc(r.position || "—") : esc(r.time)}</td>${doctor ? "" : `<td>${esc(r.symptoms || "Not provided")}</td>`}<td><span class="pill purple">${esc(r.status)}</span></td><td>${doctor && r.status === "called" ? `<button class="btn btn-sm btn-success" onclick="completePatient(${r.id})">Complete</button>` : ""}</td></tr>`).join("")}</tbody></table>`;
 }
 async function nextPatient() {
   try {
@@ -334,8 +345,11 @@ window.go = go;
 window.chooseDoctor = chooseDoctor;
 window.book = book;
 window.checkIn = checkIn;
+window.openAppointmentDetails = openAppointmentDetails;
 window.openSlip = openSlip;
 window.downloadSlip = downloadSlip;
+window.openReport = openReport;
+window.downloadReport = downloadReport;
 window.nextPatient = nextPatient;
 window.completePatient = completePatient;
 window.finishConsult = finishConsult;

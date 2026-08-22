@@ -1,18 +1,112 @@
-from datetime import date,time,timedelta
+import json
+from pathlib import Path
+from datetime import date, time, timedelta
+
 from sqlalchemy import select
-from .database import Base,engine,SessionLocal
-from .models import User,Hospital,Department,Doctor,Slot
+
 from .auth import hash_password
-Base.metadata.create_all(bind=engine); db=SessionLocal()
+from .database import Base, SessionLocal, engine
+from .models import Department, Doctor, Hospital, Slot, User
+
+Base.metadata.create_all(bind=engine)
+
+CATALOG_PATH = Path(__file__).resolve().parents[2] / 'data' / 'hospital_catalog.json'
+
+
+def load_catalog():
+    with CATALOG_PATH.open(encoding='utf-8') as catalog_file:
+        return json.load(catalog_file)['hospitals']
+
+
+def get_or_create_user(db, name, email, role='doctor'):
+    user = db.scalar(select(User).where(User.email == email))
+    if user:
+        return user
+    user = User(
+        name=name,
+        email=email,
+        password_hash=hash_password('Doctor@123'),
+        role=role,
+    )
+    db.add(user)
+    db.flush()
+    return user
+
+
+def get_or_create_hospital(db, details):
+    hospital = db.scalar(select(Hospital).where(Hospital.email == details['email']))
+    if hospital:
+        return hospital
+    hospital = Hospital(**{key: details[key] for key in ('name', 'address', 'city', 'phone', 'email')})
+    db.add(hospital)
+    db.flush()
+    return hospital
+
+
+def seed_catalog(db):
+    today = date.today()
+    for hospital_details in load_catalog():
+        hospital = get_or_create_hospital(db, hospital_details)
+        for department_details in hospital_details['departments']:
+            department_name = department_details['name']
+            department = db.scalar(
+                select(Department).where(
+                    Department.hospital_id == hospital.id,
+                    Department.name == department_name,
+                )
+            )
+            if not department:
+                department = Department(
+                    hospital_id=hospital.id,
+                    name=department_name,
+                    description=department_details.get('description') or f'{department_name} OPD',
+                )
+                db.add(department)
+                db.flush()
+            for doctor_details in department_details['doctors']:
+                name = doctor_details['name']
+                specialization = doctor_details['specialization']
+                fee = doctor_details['fee']
+                email = f"{name.lower().replace('dr. ', '').replace(' ', '.')}@mediqueue.local"
+                user = get_or_create_user(db, name, email)
+                doctor = db.scalar(select(Doctor).where(Doctor.user_id == user.id))
+                if not doctor:
+                    doctor = Doctor(
+                        user_id=user.id,
+                        hospital_id=hospital.id,
+                        department_id=department.id,
+                        specialization=specialization,
+                        consultation_fee=fee,
+                        is_available=True,
+                    )
+                    db.add(doctor)
+                    db.flush()
+                for offset in range(4):
+                    for hour in (10, 11, 12, 14, 15, 16):
+                        exists = db.scalar(
+                            select(Slot).where(
+                                Slot.doctor_id == doctor.id,
+                                Slot.date == today + timedelta(days=offset),
+                                Slot.start_time == time(hour, 0),
+                            )
+                        )
+                        if not exists:
+                            db.add(Slot(
+                                doctor_id=doctor.id,
+                                date=today + timedelta(days=offset),
+                                start_time=time(hour, 0),
+                                end_time=time(hour, 30),
+                                max_patients=10,
+                                booked_count=0,
+                            ))
+
+
+db = SessionLocal()
 try:
-    if db.scalar(select(User).where(User.email=='admin@mediqueue.local')): print('Demo data already exists.')
-    else:
-        h=Hospital(name='City Care Hospital',address='Main Hospital Road',city='Solan',phone='+91 98765 43210',email='care@cityhospital.local'); db.add(h); db.flush(); deps=[]
-        for name in ['Dermatology','Cardiology','General Medicine','Orthopedics']: d=Department(hospital_id=h.id,name=name,description=f'{name} OPD'); db.add(d); deps.append(d)
-        db.flush()
-        for role,email,pwd,name in [('admin','admin@mediqueue.local','Admin@123','MediQueue Admin'),('patient','patient@mediqueue.local','Patient@123','Yashika Gupta'),('doctor','doctor@mediqueue.local','Doctor@123','Dr. Angel')]: db.add(User(name=name,email=email,password_hash=hash_password(pwd),role=role))
-        db.flush(); du=db.scalar(select(User).where(User.email=='doctor@mediqueue.local')); doc=Doctor(user_id=du.id,hospital_id=h.id,department_id=deps[0].id,specialization='Dermatologist',consultation_fee=600,is_available=True); db.add(doc); db.flush(); today=date.today()
-        for off in range(4):
-            for hh in [10,11,12,14,15,16]: db.add(Slot(doctor_id=doc.id,date=today+timedelta(days=off),start_time=time(hh,0),end_time=time(hh,30),max_patients=10,booked_count=0))
-        db.commit(); print('Seeded MediQueue demo data.')
-finally: db.close()
+    get_or_create_user(db, 'MediQueue Admin', 'admin@mediqueue.local', 'admin')
+    get_or_create_user(db, 'Yashika Gupta', 'patient@mediqueue.local', 'patient')
+    seed_catalog(db)
+    db.commit()
+    print('Seeded MediQueue hospital, department, doctor and slot catalog.')
+finally:
+    db.close()

@@ -1,10 +1,10 @@
 :root {
-  --bg: #ebeef6;
+  --bg: white;
   --surface: #e8ebf3;
   --surface-soft: #edf0f7;
   --surface-strong: #dde2ef;
-  --primary: #7b6dff;
-  --primary-2: #9b90ff;
+  --primary: #803fcb;
+  --primary-2: #b790ff;
   --ink: #20223c;
   --muted: #6d7292;
   --green: #0f9f7b;
@@ -818,6 +818,44 @@ header {
   font-size: 10px;
 }
 
+.hospital-departments {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin-top: 14px;
+}
+
+.hospital-departments .btn {
+  border: 0;
+  border-radius: 11px;
+  padding: 7px 10px;
+  color: #5147c9;
+  background: linear-gradient(145deg, #f8f9ff, #dfe4f2);
+  box-shadow:
+    -4px -4px 8px rgba(255, 255, 255, 0.9),
+    4px 5px 9px rgba(145, 156, 185, 0.28),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.6);
+  font-size: 11px;
+  font-weight: 600;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, color 0.2s ease;
+}
+
+.hospital-departments .btn:hover {
+  color: #3e35aa;
+  background: linear-gradient(145deg, #ffffff, #e4e8f5);
+  box-shadow:
+    -5px -5px 10px rgba(255, 255, 255, 0.95),
+    5px 6px 11px rgba(145, 156, 185, 0.3),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.75);
+}
+
+.hospital-departments .btn:active {
+  transform: translateY(1px);
+  box-shadow:
+    inset -3px -3px 6px rgba(255, 255, 255, 0.9),
+    inset 3px 3px 7px rgba(145, 156, 185, 0.3);
+}
+
 .hospital-emergency {
   color: var(--red);
   font-weight: 700;
@@ -830,6 +868,156 @@ header {
   font-size: 11px;
   font-weight: 700;
   text-decoration: none;
+}
+
+.hospital-card-body > small {
+  display: block;
+  margin-top: 10px;
+  color: var(--muted);
+  font-size: 10px;
+  line-height: 1.5;
+}
+
+.history-intro {
+  margin: -7px 0 18px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.history-list {
+  display: grid;
+  gap: 16px;
+}
+
+.history-card {
+  padding: 20px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: linear-gradient(145deg, #f2f4fb, #dde2ef);
+  box-shadow: var(--shadow-raised-soft);
+}
+
+.history-card-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+  padding-bottom: 15px;
+  border-bottom: 1px solid rgba(145, 156, 185, 0.2);
+}
+
+.history-card h3 {
+  margin: 6px 0 3px;
+  font-size: 17px;
+}
+
+.history-card p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.history-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+  margin: 17px 0;
+}
+
+.history-grid div {
+  min-width: 0;
+  padding: 12px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.3);
+  box-shadow: var(--shadow-pressed);
+}
+
+.history-grid small,
+.history-grid strong {
+  display: block;
+}
+
+.history-grid small {
+  margin-bottom: 5px;
+  color: var(--muted);
+  font-size: 10px;
+}
+
+.history-grid strong {
+  overflow-wrap: anywhere;
+  color: var(--ink);
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.45;
+}
+
+.history-followup {
+  margin: 0 0 14px;
+  color: var(--green);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.history-actions,
+.appointment-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+
+.temporary-notice {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 14px;
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.temporary-notice i {
+  color: var(--orange);
+}
+
+.detail-modal h3 {
+  margin: 8px 0 3px;
+  font-size: 20px;
+}
+
+.detail-modal > p {
+  margin: 0 0 18px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.detail-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-bottom: 18px;
+}
+
+.detail-list div {
+  padding: 12px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.3);
+  box-shadow: var(--shadow-pressed);
+}
+
+.detail-list small,
+.detail-list strong {
+  display: block;
+}
+
+.detail-list small {
+  margin-bottom: 5px;
+  color: var(--muted);
+  font-size: 10px;
+}
+
+.detail-list strong {
+  overflow-wrap: anywhere;
+  font-size: 12px;
+  line-height: 1.45;
 }
 
 .slot-list {

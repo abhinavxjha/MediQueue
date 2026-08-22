@@ -61,6 +61,7 @@ class Appointment(Base):
     appointment_time: Mapped[time] = mapped_column(Time)
     token_no: Mapped[str | None] = mapped_column(String(30), nullable=True)
     status: Mapped[str] = mapped_column(String(30), default='booked')
+    symptoms: Mapped[str | None] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
 class QueueEntry(Base):

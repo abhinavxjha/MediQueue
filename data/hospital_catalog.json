@@ -1,0 +1,54 @@
+{
+  "hospitals": [
+    {
+      "name": "City Care Hospital",
+      "address": "Main Hospital Road",
+      "city": "Solan",
+      "phone": "+91 98765 43210",
+      "email": "care@cityhospital.local",
+      "departments": [
+        { "name": "General Medicine", "description": "General Medicine OPD", "doctors": [{ "name": "Dr. Ananya Sharma", "specialization": "Physician", "fee": 500 }] },
+        { "name": "Cardiology", "description": "Cardiology OPD", "doctors": [{ "name": "Dr. Rohan Mehta", "specialization": "Interventional Cardiologist", "fee": 900 }] },
+        { "name": "Dermatology", "description": "Dermatology OPD", "doctors": [{ "name": "Dr. Angel Thomas", "specialization": "Dermatologist", "fee": 600 }] },
+        { "name": "Orthopedics", "description": "Orthopedics OPD", "doctors": [{ "name": "Dr. Vikram Singh", "specialization": "Orthopedic Surgeon", "fee": 750 }] }
+      ]
+    },
+    {
+      "name": "MediLife General Hospital",
+      "address": "Riverside Road",
+      "city": "Shimla",
+      "phone": "+91 98111 22334",
+      "email": "hello@medilife.local",
+      "departments": [
+        { "name": "General Medicine", "description": "General Medicine OPD", "doctors": [{ "name": "Dr. Neha Kapoor", "specialization": "Internal Medicine Specialist", "fee": 550 }] },
+        { "name": "Pediatrics", "description": "Pediatrics OPD", "doctors": [{ "name": "Dr. Arjun Bedi", "specialization": "Pediatrician", "fee": 650 }] },
+        { "name": "Gynecology", "description": "Gynecology OPD", "doctors": [{ "name": "Dr. Priya Nair", "specialization": "Obstetrician and Gynecologist", "fee": 800 }] },
+        { "name": "ENT", "description": "ENT OPD", "doctors": [{ "name": "Dr. Karan Malhotra", "specialization": "ENT Specialist", "fee": 600 }] }
+      ]
+    },
+    {
+      "name": "Sunrise Heart & Wellness Centre",
+      "address": "North Avenue",
+      "city": "Chandigarh",
+      "phone": "+91 98222 33445",
+      "email": "care@sunrise.local",
+      "departments": [
+        { "name": "Cardiology", "description": "Cardiology OPD", "doctors": [{ "name": "Dr. Meera Iyer", "specialization": "Cardiologist", "fee": 1000 }] },
+        { "name": "Neurology", "description": "Neurology OPD", "doctors": [{ "name": "Dr. Kabir Rao", "specialization": "Neurologist", "fee": 950 }] },
+        { "name": "Endocrinology", "description": "Endocrinology OPD", "doctors": [{ "name": "Dr. Simran Gill", "specialization": "Endocrinologist", "fee": 850 }] }
+      ]
+    },
+    {
+      "name": "Himalayan Multispeciality Hospital",
+      "address": "University Link Road",
+      "city": "Solan",
+      "phone": "+91 98333 44556",
+      "email": "help@himalayanhospital.local",
+      "departments": [
+        { "name": "Pulmonology", "description": "Pulmonology OPD", "doctors": [{ "name": "Dr. Aditya Verma", "specialization": "Pulmonologist", "fee": 800 }] },
+        { "name": "General Surgery", "description": "General Surgery OPD", "doctors": [{ "name": "Dr. Ishita Khanna", "specialization": "General Surgeon", "fee": 850 }] },
+        { "name": "Ophthalmology", "description": "Ophthalmology OPD", "doctors": [{ "name": "Dr. Nitin Sood", "specialization": "Ophthalmologist", "fee": 700 }] }
+      ]
+    }
+  ]
+}

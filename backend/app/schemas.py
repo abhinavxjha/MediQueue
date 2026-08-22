@@ -14,6 +14,7 @@ class LoginIn(BaseModel):
 class AppointmentIn(BaseModel):
     doctor_id: int
     slot_id: int
+    symptoms: str | None = Field(default=None, max_length=2000)
 
 class CheckInIn(BaseModel):
     appointment_id: int
