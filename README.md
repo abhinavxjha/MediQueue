@@ -1,7 +1,7 @@
-# Querly
+# MediQueue
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Querly-Smart%20OPD%20Management-0D9488?style=for-the-badge" alt="Querly">
+  <img src="https://img.shields.io/badge/MediQueue-Smart%20OPD%20Management-6C4CE8?style=for-the-badge" alt="MediQueue">
   <img src="https://img.shields.io/badge/Python-3.x-3776AB?style=for-the-badge&logo=python&logoColor=white" alt="Python">
   <img src="https://img.shields.io/badge/FastAPI-Backend-009688?style=for-the-badge&logo=fastapi&logoColor=white" alt="FastAPI">
   <img src="https://img.shields.io/badge/MySQL-Database-4479A1?style=for-the-badge&logo=mysql&logoColor=white" alt="MySQL">
@@ -11,16 +11,16 @@
 <h3 align="center">Book. Check In. Track. Consult.</h3>
 
 <p align="center">
-  Smart OPD Appointment, Live Sine-Wave Queue & E-Slip Management System
+  Smart OPD Appointment, Queue & E-Slip Management System
 </p>
 
 ---
 
-## 📌 About Querly
+## 📌 About MediQueue
 
-Querly is a smart digital platform designed to simplify and optimize the complete outpatient department (OPD) workflow.
+MediQueue is a smart digital platform designed to simplify and optimize the complete outpatient department (OPD) workflow.
 
-Instead of stopping at appointment booking, Querly manages the complete patient journey:
+Instead of stopping at appointment booking, MediQueue manages the complete patient journey:
 
 ```text
 Patient Registration
@@ -227,7 +227,6 @@ MediQueue/
 ├── backend/
 │   ├── .env
 │   ├── .env.example
-│   ├── seed.py
 │   ├── requirements.txt
 │   │
 │   └── app/
@@ -238,6 +237,7 @@ MediQueue/
 │       ├── models.py
 │       ├── schemas.py
 │       ├── auth.py
+│       ├── seed.py
 │       │
 │       ├── routers/
 │       │   ├── auth.py
@@ -585,13 +585,13 @@ E:\MediQueue\backend
 with the virtual environment activated:
 
 ```powershell
-python seed.py
+python -m app.seed
 ```
 
 Or explicitly:
 
 ```powershell
-.\.venv\Scripts\python.exe seed.py
+.\.venv\Scripts\python.exe -m app.seed
 ```
 
 Expected output:
@@ -762,7 +762,7 @@ The database seed creates demo accounts.
 
 ```text
 Email:
-patient@querly.local
+patient@mediqueue.local
 
 Password:
 Patient@123
@@ -772,7 +772,7 @@ Patient@123
 
 ```text
 Email:
-doctor@querly.local
+doctor@mediqueue.local
 
 Password:
 Doctor@123
@@ -782,7 +782,7 @@ Doctor@123
 
 ```text
 Email:
-admin@querly.local
+admin@mediqueue.local
 
 Password:
 Admin@123
@@ -1066,7 +1066,7 @@ CREATE DATABASE IF NOT EXISTS mediqueue;
 Then:
 
 ```powershell
-python seed.py
+python -m app.seed
 ```
 
 ---
@@ -1202,7 +1202,7 @@ python -m pip install -r requirements.txt
 
 Copy-Item .env.example .env
 
-python seed.py
+python -m app.seed
 
 python -m uvicorn app.main:app --reload
 ```
