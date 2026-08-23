@@ -42,27 +42,100 @@
       </div>
       <div class="auth-form">
         <div class="tabs">
-          <button class="active" data-auth="login">Login</button><button data-auth="register">Create account</button>
+          <button class="active" data-auth="login"><i class="bi bi-box-arrow-in-right me-1"></i> Login</button>
+          <button data-auth="register"><i class="bi bi-person-plus me-1"></i> Create account</button>
         </div>
-        <form id="loginForm">
-          <label>Email</label><input id="loginEmail" type="email" value="patient@querly.com"
-            required /><label>Password</label><input id="loginPassword" type="password" value="Patient@123"
-            required /><button class="primary-btn" type="submit">
-            Sign in </button><small style="display:block;margin-top:14px;color:var(--muted);font-size:11px">Quick
-            Sign-In:
-            <a href="#" style="color:var(--primary);font-weight:700"
-              onclick="quickLogin('patient@querly.com','Patient@123')">Patient</a> ·
-            <a href="#" style="color:var(--primary);font-weight:700"
-              onclick="quickLogin('hospital@querly.com','Hospital@123')">Hospital Desk</a> ·
-            <a href="#" style="color:var(--primary);font-weight:700"
-              onclick="quickLogin('doctor1@hospital.com','Doctor@123')">Doctor</a> ·
-            <a href="#" style="color:var(--primary);font-weight:700"
-              onclick="quickLogin('admin@querly.com','Admin@123')">Admin</a></small>
+
+        <!-- Form Structured Login Form -->
+        <form id="loginForm" class="auth-form-structure">
+          <div class="form-header">
+            <h4><i class="bi bi-shield-lock-fill"></i> Sign In to Portal</h4>
+            <p>Select your personnel role and enter your credentials to log in.</p>
+          </div>
+
+          <div class="form-group">
+            <label for="loginRole"><i class="bi bi-person-badge"></i> Personnel Role</label>
+            <select id="loginRole" class="form-select-custom" onchange="selectAuthRole(this.value)">
+              <option value="patient">Patient (OPD & E-Slips)</option>
+              <option value="doctor">Doctor (OPD Queue & Consultations)</option>
+              <option value="hospital">Hospital Desk (OPD Console & Timestamps)</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="loginEmail"><i class="bi bi-envelope"></i> Email Address</label>
+            <div class="input-icon-wrap">
+              <i class="bi bi-envelope input-icon"></i>
+              <input id="loginEmail" type="email" placeholder="name@domain.com" required />
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="loginPassword"><i class="bi bi-lock"></i> Password</label>
+            <div class="input-icon-wrap">
+              <i class="bi bi-lock input-icon"></i>
+              <input id="loginPassword" type="password" placeholder="••••••••" required />
+              <button type="button" class="btn-toggle-pwd" onclick="togglePasswordVisibility('loginPassword', this)"><i class="bi bi-eye"></i></button>
+            </div>
+          </div>
+
+          <button class="primary-btn form-submit-btn" type="submit">
+            <i class="bi bi-box-arrow-in-right me-1"></i> Sign In
+          </button>
         </form>
-        <form id="registerForm" class="hidden">
-          <label>Full name</label><input id="regName" required /><label>Email</label><input id="regEmail" type="email"
-            required /><label>Phone</label><input id="regPhone" /><label>Password</label><input id="regPassword"
-            type="password" minlength="8" required /><button class="primary-btn" type="submit">Create account</button>
+
+        <!-- Form Structured Create Account Form -->
+        <form id="registerForm" class="auth-form-structure hidden">
+          <div class="form-header">
+            <h4><i class="bi bi-person-plus-fill"></i> Create Personnel Account</h4>
+            <p>Set up your new OPD account and select your personnel access level.</p>
+          </div>
+
+          <div class="form-group">
+            <label for="regRole"><i class="bi bi-person-badge"></i> Personnel Role</label>
+            <select id="regRole" class="form-select-custom" onchange="selectAuthRole(this.value)">
+              <option value="patient">Patient OPD Portal</option>
+              <option value="doctor">Doctor Consultation Portal</option>
+              <option value="hospital">Hospital OPD Desk</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="regName"><i class="bi bi-person"></i> Full Name</label>
+            <div class="input-icon-wrap">
+              <i class="bi bi-person input-icon"></i>
+              <input id="regName" type="text" placeholder="e.g. Dr. Sarah Jenkins or John Doe" required />
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="regEmail"><i class="bi bi-envelope"></i> Email Address</label>
+            <div class="input-icon-wrap">
+              <i class="bi bi-envelope input-icon"></i>
+              <input id="regEmail" type="email" placeholder="name@example.com" required />
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="regPhone"><i class="bi bi-telephone"></i> Phone Number</label>
+            <div class="input-icon-wrap">
+              <i class="bi bi-telephone input-icon"></i>
+              <input id="regPhone" type="tel" placeholder="+91 98765 43210" />
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="regPassword"><i class="bi bi-key"></i> Create Password</label>
+            <div class="input-icon-wrap">
+              <i class="bi bi-lock input-icon"></i>
+              <input id="regPassword" type="password" placeholder="At least 8 characters" minlength="8" required />
+              <button type="button" class="btn-toggle-pwd" onclick="togglePasswordVisibility('regPassword', this)"><i class="bi bi-eye"></i></button>
+            </div>
+          </div>
+
+          <button class="primary-btn form-submit-btn" type="submit">
+            <i class="bi bi-person-check-fill me-1"></i> Create Account
+          </button>
         </form>
       </div>
     </div>
@@ -98,6 +171,7 @@
           <i class="bi bi-chevron-down"></i>
         </div>
       </header>
+      <div id="topAppointmentsBanner" class="top-appointments-banner"></div>
       <section id="content"></section>
     </main>
   </div>

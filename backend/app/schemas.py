@@ -8,6 +8,7 @@ class RegisterIn(BaseModel):
     email: EmailStr
     phone: str | None = None
     password: str = Field(min_length=8)
+    role: str = Field(default="patient")
 
 class LoginIn(BaseModel):
     email: EmailStr
@@ -102,3 +103,35 @@ class PatientProfileOut(BaseModel):
     profile_complete: bool = False
 
     model_config = {'from_attributes': True}
+
+class DoctorProfileIn(BaseModel):
+    name: str = Field(min_length=2, max_length=120)
+    phone: str | None = None
+    hospital_id: int
+    department_id: int
+    specialization: str = Field(min_length=2, max_length=120)
+    consultation_fee: float = Field(default=500.0, ge=0, le=100000)
+    qualification: str | None = Field(default=None, max_length=200)
+    experience_years: int | None = Field(default=5, ge=0, le=70)
+    bio: str | None = Field(default=None, max_length=2000)
+
+class DoctorProfileOut(BaseModel):
+    user_id: int
+    doctor_id: int
+    name: str
+    email: str
+    phone: str | None = None
+    hospital_id: int
+    hospital_name: str | None = None
+    department_id: int
+    department_name: str | None = None
+    specialization: str
+    consultation_fee: float
+    is_available: bool
+    qualification: str | None = None
+    experience_years: int | None = None
+    bio: str | None = None
+    profile_complete: bool = False
+
+    model_config = {'from_attributes': True}
+

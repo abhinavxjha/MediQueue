@@ -1654,3 +1654,395 @@ header {
 .modal-box .section-title:first-of-type {
   margin-top: 0;
 }
+
+/* Personnel Role Selector Styles on Landing Screen */
+.role-selection-wrapper {
+  margin-bottom: 20px;
+}
+
+.role-select-label {
+  display: block;
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--muted);
+  margin-bottom: 10px;
+}
+
+.role-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.role-card {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px;
+  border-radius: var(--radius-sm);
+  background: var(--surface-soft);
+  border: 2px solid transparent;
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.role-card:hover {
+  background: var(--surface);
+  border-color: rgba(8, 112, 124, 0.3);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-raised-soft);
+}
+
+.role-card.active {
+  background: var(--primary-light);
+  border-color: var(--primary);
+  box-shadow: 0 4px 14px rgba(8, 112, 124, 0.18);
+}
+
+.role-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: var(--surface);
+  color: var(--primary);
+  display: grid;
+  place-items: center;
+  font-size: 18px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+  flex-shrink: 0;
+}
+
+.role-card.active .role-icon {
+  background: var(--primary);
+  color: #ffffff;
+}
+
+.role-info b {
+  display: block;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.role-info small {
+  display: block;
+  font-size: 10px;
+  color: var(--muted);
+  margin-top: 2px;
+  text-align: left;
+}
+
+.role-check {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  font-size: 14px;
+  color: var(--primary);
+  opacity: 0;
+  transform: scale(0.5);
+  transition: all 0.2s ease;
+}
+
+.role-card.active .role-check {
+  opacity: 1;
+  transform: scale(1);
+}
+
+/* Top Appointments Header Banner inside Web Application */
+.top-appointments-banner {
+  margin-bottom: 24px;
+  animation: fadeInDown 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes fadeInDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.top-app-card {
+  position: relative;
+  border-radius: var(--radius-md);
+  background: linear-gradient(135deg, #ffffff 0%, #f0fdfa 100%);
+  border: 1px dashed rgba(8, 112, 124, 0.3);
+  box-shadow: var(--shadow-executive);
+  padding: 18px 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.top-app-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid rgba(8, 112, 124, 0.1);
+  padding-bottom: 10px;
+}
+
+.top-app-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 800;
+  font-size: 15px;
+  color: var(--primary-dark);
+  font-family: 'Plus Jakarta Sans', sans-serif;
+}
+
+.top-app-title i {
+  font-size: 20px;
+  color: var(--primary);
+}
+
+.top-app-badge {
+  background: var(--primary-light);
+  color: var(--primary);
+  border: 1px solid rgba(8, 112, 124, 0.2);
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.top-app-body {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.top-app-details {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  flex-wrap: wrap;
+}
+
+.top-app-item {
+  display: flex;
+  flex-direction: column;
+}
+
+.top-app-item label {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--muted);
+  margin-bottom: 2px;
+}
+
+.top-app-item strong {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.top-app-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.top-app-actions .btn {
+  border-radius: 10px;
+  font-weight: 700;
+  font-size: 12px;
+  padding: 8px 16px;
+}
+
+/* Form Structure Styles for Login & Create Account */
+.auth-form-structure {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.form-header {
+  border-bottom: 1px solid rgba(8, 112, 124, 0.1);
+  padding-bottom: 10px;
+  margin-bottom: 4px;
+}
+
+.form-header h4 {
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--primary-dark);
+  margin: 0 0 4px 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+}
+
+.form-header h4 i {
+  color: var(--primary);
+}
+
+.form-header p {
+  font-size: 12px;
+  color: var(--muted);
+  margin: 0;
+}
+
+.auth-form-structure .form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.auth-form-structure label {
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--muted);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.auth-form-structure label i {
+  color: var(--primary);
+  font-size: 13px;
+}
+
+.input-icon-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.input-icon-wrap .input-icon {
+  position: absolute;
+  left: 14px;
+  color: var(--primary);
+  font-size: 15px;
+  pointer-events: none;
+}
+
+.input-icon-wrap input {
+  width: 100%;
+  padding: 12px 14px 12px 42px;
+  border-radius: var(--radius-sm);
+  border: 1.5px solid rgba(8, 112, 124, 0.2);
+  background: var(--surface-soft);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ink);
+  transition: all 0.2s ease;
+}
+
+.input-icon-wrap input:focus {
+  outline: none;
+  background: #ffffff;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(8, 112, 124, 0.15);
+}
+
+.btn-toggle-pwd {
+  position: absolute;
+  right: 10px;
+  background: transparent;
+  border: 0;
+  color: var(--muted);
+  padding: 6px;
+  cursor: pointer;
+  border-radius: 6px;
+  display: grid;
+  place-items: center;
+  transition: color 0.2s ease;
+}
+
+.btn-toggle-pwd:hover {
+  color: var(--primary);
+}
+
+.form-select-custom {
+  width: 100%;
+  padding: 12px 14px;
+  border-radius: var(--radius-sm);
+  border: 1.5px solid rgba(8, 112, 124, 0.2);
+  background: var(--surface-soft);
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--primary-dark);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  outline: none;
+}
+
+.form-select-custom:focus {
+  background: #ffffff;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(8, 112, 124, 0.15);
+}
+
+.form-submit-btn {
+  width: 100%;
+  padding: 14px;
+  font-size: 14px;
+  font-weight: 800;
+  border-radius: var(--radius-sm);
+  letter-spacing: 0.3px;
+  margin-top: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.quick-login-footer {
+  margin-top: 10px;
+  padding-top: 14px;
+  border-top: 1px dashed rgba(8, 112, 124, 0.15);
+}
+
+.quick-login-title {
+  display: block;
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  color: var(--muted);
+  letter-spacing: 0.5px;
+  margin-bottom: 8px;
+}
+
+.quick-login-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.chip-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 20px;
+  background: var(--surface-soft);
+  border: 1px solid rgba(8, 112, 124, 0.2);
+  color: var(--primary-dark);
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.chip-btn:hover {
+  background: var(--primary-light);
+  border-color: var(--primary);
+  color: var(--primary);
+  transform: translateY(-1px);
+}

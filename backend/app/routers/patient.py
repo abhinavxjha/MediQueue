@@ -6,7 +6,7 @@ from ..database import get_db
 from ..models import User,Hospital,Department,Doctor,Slot,Appointment,QueueEntry,ESlip,Notification,Consultation
 from ..schemas import AppointmentIn,CheckInIn,FeedbackIn
 from ..auth import require_roles
-from ..services.queue import create_queue_entry,estimated_wait,refresh_positions
+from ..services.queue import create_queue_entry,estimated_wait,get_wait_prediction_details,refresh_positions
 from ..services.slips import qr_data_url
 router=APIRouter(prefix='/api/patient',tags=['Patient']); patient_dep=require_roles('patient', 'doctor', 'admin')
 
@@ -114,8 +114,49 @@ def slots(doctor_id: int, selected_date: date | None = None, db: Session = Depen
 def book(data:AppointmentIn,user=Depends(patient_dep),db:Session=Depends(get_db)):
     slot=db.get(Slot,data.slot_id); doctor=db.get(Doctor,data.doctor_id)
     if not slot or not doctor or slot.doctor_id!=doctor.id or slot.booked_count>=slot.max_patients: raise HTTPException(400,'Slot is unavailable')
+    if not doctor.is_available: raise HTTPException(400,'Doctor is currently busy and unavailable for new appointments')
     if db.scalar(select(Appointment).where(and_(Appointment.patient_id==user.id,Appointment.slot_id==slot.id,Appointment.status.not_in(['cancelled'])))): raise HTTPException(409,'You already have an appointment in this slot')
     token=f"{db.get(Department,doctor.department_id).name[:1].upper()}-{slot.booked_count+1:03d}"; a=Appointment(patient_id=user.id,doctor_id=doctor.id,slot_id=slot.id,appointment_date=slot.date,appointment_time=slot.start_time,token_no=token,status='booked',symptoms=data.symptoms); slot.booked_count+=1; db.add(a); db.flush(); db.add(ESlip(appointment_id=a.id,qr_payload=str({'appointment_id':a.id,'patient_id':user.id,'token':token}))); db.add(Notification(user_id=user.id,type='booking',message=f'Appointment booked successfully. Token {token}.')); db.commit(); return {'message':'Appointment booked','appointment_id':a.id,'token':token}
+@router.delete('/appointments/{appointment_id}')
+def remove_appointment(appointment_id: int, user=Depends(patient_dep), db: Session = Depends(get_db)):
+    a = db.get(Appointment, appointment_id)
+    if not a or a.patient_id != user.id:
+        raise HTTPException(404, 'Appointment not found')
+    non_removable = {'checked_in', 'called', 'ongoing', 'in_consultation', 'serving', 'completed'}
+    if a.status in non_removable:
+        raise HTTPException(400, f'Cannot remove appointment with status "{a.status}". Ongoing and completed appointments cannot be removed.')
+    q = db.scalar(select(QueueEntry).where(QueueEntry.appointment_id == a.id))
+    if q and q.status in {'called', 'ongoing', 'serving', 'completed'}:
+        raise HTTPException(400, 'Cannot remove an appointment that is currently ongoing or completed.')
+    a.status = 'cancelled'
+    if q:
+        q.status = 'cancelled'
+    
+    # Recalculate queue positions so (n+1)th patient moves into the nth spot
+    refresh_positions(db, a.doctor_id)
+    
+    # Notify waiting patients about their updated position shift
+    active_q = db.scalars(
+        select(QueueEntry)
+        .where(QueueEntry.doctor_id == a.doctor_id, QueueEntry.status == 'waiting')
+        .order_by(QueueEntry.queue_position)
+    ).all()
+    for entry in active_q:
+        db.add(Notification(
+            user_id=entry.patient_id,
+            type='queue_shift',
+            message=f'Queue Update: Token {entry.token_no} has moved up to position #{entry.queue_position}.'
+        ))
+        
+    if a.slot_id:
+        slot = db.get(Slot, a.slot_id)
+        if slot and slot.booked_count > 0:
+            slot.booked_count -= 1
+            
+    db.add(Notification(user_id=user.id, type='cancellation', message=f'Appointment {a.token_no} was cancelled.'))
+    db.commit()
+    return {'message': 'Appointment removed successfully. Queue positions shifted.', 'appointment_id': appointment_id}
+
 @router.post('/check-in')
 def checkin(data:CheckInIn,user=Depends(patient_dep),db:Session=Depends(get_db)):
     a=db.get(Appointment,data.appointment_id)
@@ -126,9 +167,11 @@ def checkin(data:CheckInIn,user=Depends(patient_dep),db:Session=Depends(get_db))
 def queue(appointment_id:int,user=Depends(patient_dep),db:Session=Depends(get_db)):
     a=db.get(Appointment,appointment_id)
     if not a or a.patient_id!=user.id: raise HTTPException(404,'Appointment not found')
-    q=db.scalar(select(QueueEntry).where(QueueEntry.appointment_id==a.id));
-    if not q:return {'status':a.status,'token':a.token_no,'position':None,'waiting_minutes':None,'now_serving':None}
-    refresh_positions(db,a.doctor_id); db.commit(); called=db.scalar(select(QueueEntry).where(QueueEntry.doctor_id==a.doctor_id,QueueEntry.status=='called')); return {'status':q.status,'token':q.token_no,'position':q.queue_position,'waiting_minutes':estimated_wait(db,a.doctor_id,q.queue_position),'now_serving':called.token_no if called else None}
+    q=db.scalar(select(QueueEntry).where(QueueEntry.appointment_id==a.id))
+    if not q: return {'status':a.status,'token':a.token_no,'position':None,'waiting_minutes':None,'now_serving':None,'prediction':None}
+    refresh_positions(db,a.doctor_id); db.commit(); called=db.scalar(select(QueueEntry).where(QueueEntry.doctor_id==a.doctor_id,QueueEntry.status=='called'))
+    pred=get_wait_prediction_details(db,a.doctor_id,q.queue_position)
+    return {'status':q.status,'token':q.token_no,'position':q.queue_position,'waiting_minutes':pred['predicted_wait_minutes'],'prediction':pred,'now_serving':called.token_no if called else None}
 @router.get('/eslip/{appointment_id}')
 def eslip(appointment_id:int,user=Depends(patient_dep),db:Session=Depends(get_db)):
     a=db.get(Appointment,appointment_id)

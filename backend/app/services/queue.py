@@ -57,7 +57,7 @@ def get_average_consultation_time(db: Session, doctor_id: int) -> float:
         return round(sum(durations) / len(durations), 1)
     return 10.0
 
-def estimated_wait(db: Session, doctor_id: int, queue_position: int) -> int:
+def get_wait_prediction_details(db: Session, doctor_id: int, queue_position: int) -> dict:
     avg_mins = get_average_consultation_time(db, doctor_id)
     ahead = max(queue_position - 1, 0)
     
@@ -66,12 +66,35 @@ def estimated_wait(db: Session, doctor_id: int, queue_position: int) -> int:
         .where(QueueEntry.doctor_id == doctor_id, QueueEntry.status == 'called')
     )
     
-    active_remaining = 0
+    active_remaining = 0.0
     if active_entry and active_entry.called_time:
         elapsed = (datetime.utcnow() - active_entry.called_time).total_seconds() / 60.0
-        active_remaining = max(1.0, avg_mins - elapsed)
+        active_remaining = max(1.0, round(avg_mins - elapsed, 1))
     elif active_entry:
         active_remaining = avg_mins
 
     total_est = (ahead * avg_mins) + active_remaining
-    return max(0, int(round(total_est)))
+    predicted_mins = max(0, int(round(total_est)))
+    
+    completed_count = db.scalar(
+        select(func.count())
+        .select_from(QueueEntry)
+        .where(
+            QueueEntry.doctor_id == doctor_id,
+            QueueEntry.status == 'completed',
+            QueueEntry.called_time.is_not(None),
+            QueueEntry.completed_time.is_not(None)
+        )
+    ) or 0
+    
+    return {
+        "predicted_wait_minutes": predicted_mins,
+        "avg_consultation_time": avg_mins,
+        "patients_ahead": ahead,
+        "ongoing_remaining_minutes": active_remaining if active_entry else 0,
+        "samples_count": completed_count
+    }
+
+def estimated_wait(db: Session, doctor_id: int, queue_position: int) -> int:
+    return get_wait_prediction_details(db, doctor_id, queue_position)["predicted_wait_minutes"]
+
