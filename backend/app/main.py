@@ -9,10 +9,10 @@ app = FastAPI(title='Querly API', version='1.0.0', description='Smart OPD Appoin
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[x.strip() for x in settings.CORS_ORIGINS.split(',') if x.strip()],
-    allow_credentials=True,
-    allow_methods=['*'],
-    allow_headers=['*']
+    allow_origins=["*"],
+    allow_credentials=False,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 Base.metadata.create_all(bind=engine)
@@ -22,6 +22,12 @@ with engine.begin() as connection:
     doc_cols = {column['name'] for column in inspect(engine).get_columns('doctors')}
     if 'weekly_schedule' not in doc_cols:
         connection.execute(text('ALTER TABLE doctors ADD COLUMN weekly_schedule JSON'))
+    if 'qualification' not in doc_cols:
+        connection.execute(text('ALTER TABLE doctors ADD COLUMN qualification VARCHAR(200)'))
+    if 'experience_years' not in doc_cols:
+        connection.execute(text('ALTER TABLE doctors ADD COLUMN experience_years INT DEFAULT 5'))
+    if 'bio' not in doc_cols:
+        connection.execute(text('ALTER TABLE doctors ADD COLUMN bio TEXT'))
     
     appt_cols = {column['name'] for column in inspect(engine).get_columns('appointments')}
     if 'symptoms' not in appt_cols:

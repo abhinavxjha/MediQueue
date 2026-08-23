@@ -112,7 +112,189 @@ function renderNav() {
     }),
   );
 }
+let selectedAuthRole = "patient";
+
+function selectAuthRole(role) {
+  selectedAuthRole = role;
+  const regRole = $("#regRole");
+  if (regRole) regRole.value = role;
+  const loginRole = $("#loginRole");
+  if (loginRole) loginRole.value = role;
+}
+window.selectAuthRole = selectAuthRole;
+
+async function renderTopAppointmentsBanner() {
+  const container = $("#topAppointmentsBanner");
+  if (!container) return;
+  if (!currentUser) {
+    container.innerHTML = "";
+    return;
+  }
+
+  try {
+    if (currentUser.role === "patient") {
+      const d = await api("/patient/home");
+      const activeApps = d.appointments.filter((a) => a.status !== "completed");
+      const nextApp = activeApps[0];
+
+      if (nextApp) {
+        container.innerHTML = `
+          <div class="top-app-card">
+            <div class="top-app-header">
+              <div class="top-app-title">
+                <i class="bi bi-calendar-check-fill"></i>
+                <span>New & Active Appointments</span>
+              </div>
+              <span class="top-app-badge"><i class="bi bi-bell-fill"></i> ${activeApps.length} Active ${activeApps.length === 1 ? 'Appointment' : 'Appointments'}</span>
+            </div>
+            <div class="top-app-body">
+              <div class="top-app-details">
+                <div class="top-app-item">
+                  <label>Consulting Specialist</label>
+                  <strong>${esc(nextApp.doctor)} (${esc(nextApp.specialization)})</strong>
+                </div>
+                <div class="top-app-item">
+                  <label>Department & Hospital</label>
+                  <strong>${esc(nextApp.department)} · ${esc(nextApp.hospital)}</strong>
+                </div>
+                <div class="top-app-item">
+                  <label>Scheduled Slot</label>
+                  <strong>${esc(nextApp.date)} at ${esc(nextApp.time)}</strong>
+                </div>
+                <div class="top-app-item">
+                  <label>Token & Status</label>
+                  <div>
+                    <b class="token-pill me-2">${esc(nextApp.token || "—")}</b>
+                    <span class="pill ${nextApp.status === "checked_in" ? "purple" : "orange"}">${esc(nextApp.status)}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        `;
+      } else {
+        container.innerHTML = `
+          <div class="top-app-card">
+            <div class="top-app-header">
+              <div class="top-app-title">
+                <i class="bi bi-calendar-plus-fill"></i>
+                <span>New OPD Appointments</span>
+              </div>
+              <span class="top-app-badge text-muted">0 Active Visits</span>
+            </div>
+            <div class="top-app-body">
+              <div class="top-app-details">
+                <span class="text-muted small"><i class="bi bi-info-circle me-1"></i> You currently have no upcoming OPD appointments scheduled.</span>
+              </div>
+            </div>
+          </div>
+        `;
+      }
+    } else if (currentUser.role === "doctor") {
+      const d = await api("/doctor/dashboard");
+      const waitingCount = d.stats.waiting || 0;
+      const bookedCount = d.stats.booked || 0;
+      const nextQ = d.queue ? d.queue[0] : null;
+
+      container.innerHTML = `
+        <div class="top-app-card">
+          <div class="top-app-header">
+            <div class="top-app-title">
+              <i class="bi bi-person-workspace"></i>
+              <span>Today's OPD Patient Appointments</span>
+            </div>
+            <span class="top-app-badge"><i class="bi bi-calendar-event"></i> ${bookedCount} Appointments Today (${waitingCount} Waiting)</span>
+          </div>
+          <div class="top-app-body">
+            <div class="top-app-details">
+              <div class="top-app-item">
+                <label>Next Patient Ticket</label>
+                <strong>${nextQ ? `Token ${esc(nextQ.token)} (Position #${nextQ.position})` : 'No patients currently waiting'}</strong>
+              </div>
+              <div class="top-app-item">
+                <label>Queue Status</label>
+                <strong>${d.stats.checked_in} Checked In · ${d.stats.completed} Completed</strong>
+              </div>
+            </div>
+            <div class="top-app-actions">
+              <button class="btn btn-sm btn-teal" onclick="nextPatient()"><i class="bi bi-telephone-outbound"></i> Call Next Patient</button>
+              <button class="btn btn-sm btn-outline-primary" onclick="go('appointments')"><i class="bi bi-list-task"></i> View Appointments</button>
+              <button class="btn btn-sm btn-outline-secondary" onclick="go('slots')"><i class="bi bi-clock"></i> Manage Slots</button>
+            </div>
+          </div>
+        </div>
+      `;
+    } else if (currentUser.role === "hospital") {
+      const overview = await api("/hospital/overview");
+      container.innerHTML = `
+        <div class="top-app-card">
+          <div class="top-app-header">
+            <div class="top-app-title">
+              <i class="bi bi-hospital-fill"></i>
+              <span>Hospital OPD Desk & New Appointments</span>
+            </div>
+            <span class="top-app-badge"><i class="bi bi-people-fill"></i> ${overview.queue_stats.waiting} Waiting · ${overview.queue_stats.ongoing} Ongoing</span>
+          </div>
+          <div class="top-app-body">
+            <div class="top-app-details">
+              <div class="top-app-item">
+                <label>Today's Completed</label>
+                <strong>${overview.queue_stats.completed} Patient Consultations</strong>
+              </div>
+              <div class="top-app-item">
+                <label>Real-Time OPD Wait</label>
+                <strong>~${overview.queue_stats.avg_duration_minutes} min / consultation</strong>
+              </div>
+            </div>
+            <div class="top-app-actions">
+              <button class="btn btn-sm btn-teal" onclick="go('dashboard')"><i class="bi bi-speedometer2"></i> Live OPD Console</button>
+              <button class="btn btn-sm btn-outline-primary" onclick="go('doctors')"><i class="bi bi-calendar3"></i> Doctor Availability</button>
+              <button class="btn btn-sm btn-outline-secondary" onclick="go('timelogs')"><i class="bi bi-stopwatch"></i> Timestamps</button>
+            </div>
+          </div>
+        </div>
+      `;
+    } else if (currentUser.role === "admin") {
+      const d = await api("/admin/dashboard");
+      container.innerHTML = `
+        <div class="top-app-card">
+          <div class="top-app-header">
+            <div class="top-app-title">
+              <i class="bi bi-shield-check-fill"></i>
+              <span>System New Appointments & OPD Overview</span>
+            </div>
+            <span class="top-app-badge"><i class="bi bi-activity"></i> ${d.kpis.patients_today} Total Patients Today</span>
+          </div>
+          <div class="top-app-body">
+            <div class="top-app-details">
+              <div class="top-app-item">
+                <label>Completed Consultations</label>
+                <strong>${d.kpis.completed} Completed</strong>
+              </div>
+              <div class="top-app-item">
+                <label>Waiting Queue</label>
+                <strong>${d.kpis.waiting} Patients Waiting</strong>
+              </div>
+              <div class="top-app-item">
+                <label>No-Show Rate</label>
+                <strong>${d.kpis.no_show_rate}%</strong>
+              </div>
+            </div>
+            <div class="top-app-actions">
+              <button class="btn btn-sm btn-teal" onclick="go('analytics')"><i class="bi bi-bar-chart-line"></i> Analytics</button>
+              <button class="btn btn-sm btn-outline-primary" onclick="go('doctors')"><i class="bi bi-person-badge"></i> Doctors Catalog</button>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+  } catch (e) {
+    container.innerHTML = "";
+  }
+}
+
 async function render() {
+  await renderTopAppointmentsBanner();
   const c = $("#content");
   clearInterval(temporaryAppointmentTimer);
   temporaryAppointmentTimer = null;
@@ -123,7 +305,18 @@ async function render() {
     else if (currentUser.role === "hospital" || active === "hospital_desk") await hospitalPage(c);
     else await adminPage(c);
   } catch (e) {
-    c.innerHTML = `<div class="panel empty"><i class="bi bi-exclamation-triangle"></i><br>${esc(e.message)}</div>`;
+    const isNetwork = e.message.toLowerCase().includes("failed to fetch") || e.message.toLowerCase().includes("networkerror");
+    c.innerHTML = `
+      <div class="panel empty flex-column align-items-center justify-content-center p-5 text-center">
+        <i class="bi bi-${isNetwork ? 'wifi-off' : 'exclamation-triangle'} text-teal display-4 mb-3"></i>
+        <h4>${isNetwork ? "Connection Error" : "Unable to Load Data"}</h4>
+        <p class="text-muted small max-w-md mb-3">${esc(e.message)}</p>
+        <div class="d-flex gap-2 justify-content-center">
+          <button class="btn btn-teal" onclick="render()"><i class="bi bi-arrow-clockwise me-1"></i> Retry Connection</button>
+          <button class="btn btn-outline-secondary" onclick="doLogout()"><i class="bi bi-box-arrow-left me-1"></i> Sign In Again</button>
+        </div>
+      </div>
+    `;
   }
 }
 function startTemporaryAppointmentTimer(appointments) {
@@ -144,7 +337,8 @@ async function openAppointmentDetails(id) {
   const data = await api("/patient/home");
   const appointment = data.appointments.find((item) => item.id === id);
   if (!appointment) return toast("Appointment not found");
-  showModal(`<button class="close" onclick="closeModal()">×</button><div class="detail-modal"><span class="eyebrow">APPOINTMENT DETAILS</span><h3>${esc(appointment.doctor)}</h3><p>${esc(appointment.specialization)} · ${esc(appointment.department)}</p><div class="detail-list"><div><small>Hospital</small><strong>${esc(appointment.hospital)}</strong></div><div><small>Date and time</small><strong>${appointment.date} · ${appointment.time}</strong></div><div><small>Token and fee</small><strong>${esc(appointment.token || "—")} · ₹${appointment.fee}</strong></div><div><small>Symptoms</small><strong>${esc(appointment.symptoms || "Not provided")}</strong></div><div><small>Status</small><strong>${esc(appointment.status)}</strong></div></div><button class="primary-btn" onclick="downloadSlip(${id})"><i class="bi bi-download"></i> Download E-Slip</button></div>`);
+  const isRemovable = !["checked_in", "called", "ongoing", "in_consultation", "serving", "completed"].includes(appointment.status);
+  showModal(`<button class="close" onclick="closeModal()">×</button><div class="detail-modal"><span class="eyebrow">APPOINTMENT DETAILS</span><h3>${esc(appointment.doctor)}</h3><p>${esc(appointment.specialization)} · ${esc(appointment.department)}</p><div class="detail-list"><div><small>Hospital</small><strong>${esc(appointment.hospital)}</strong></div><div><small>Date and time</small><strong>${appointment.date} · ${appointment.time}</strong></div><div><small>Token and fee</small><strong>${esc(appointment.token || "—")} · ₹${appointment.fee}</strong></div><div><small>Symptoms</small><strong>${esc(appointment.symptoms || "Not provided")}</strong></div><div><small>Status</small><strong>${esc(appointment.status)}</strong></div></div><div class="d-flex gap-2 mt-3"><button class="primary-btn flex-grow-1" onclick="downloadSlip(${id})"><i class="bi bi-download"></i> Download E-Slip</button>${isRemovable ? `<button class="btn btn-outline-danger" onclick="cancelAppointment(${id}, '${appointment.status}')"><i class="bi bi-trash"></i> Remove</button>` : `<button class="btn btn-outline-secondary" disabled title="Ongoing and completed visits cannot be removed"><i class="bi bi-lock"></i> Locked</button>`}</div></div>`);
 }
 async function openReport(id) {
   try {
@@ -346,10 +540,18 @@ function renderSineWaveQueueHTML(queue, next) {
         </div>
       </div>
 
-      <div class="d-flex justify-content-between align-items-center mt-3 pt-3 border-top" style="font-size:12px;color:var(--muted)">
-        <span><i class="bi bi-people"></i> Position in line: <b style="color:var(--primary-dark)">${pos === 1 ? "Next in line!" : pos + " patients ahead"}</b></span>
-        <span><i class="bi bi-clock-history"></i> Estimated wait: <b style="color:var(--primary-dark)">${waitMin} min</b></span>
-        <span><i class="bi bi-ticket-perforated"></i> Your Token: <b style="color:var(--primary-dark)">${esc(token)}</b></span>
+      <div class="prediction-info-box mt-3 p-3 rounded" style="background: rgba(6, 131, 148, 0.04); border: 1px solid rgba(6, 131, 148, 0.15); font-size: 13px;">
+        <div class="d-flex justify-content-between align-items-center mb-2 flex-wrap gap-2">
+          <span><i class="bi bi-people-fill text-teal me-1"></i> Position in line: <b style="color:var(--primary-dark)">${pos === 1 ? "Next in line!" : (pos - 1) + " patients ahead"}</b></span>
+          <span><i class="bi bi-clock-history text-teal me-1"></i> Predicted Wait Time: <b style="color:var(--primary-dark); font-size: 15px;">${waitMin} min</b></span>
+          <span><i class="bi bi-ticket-perforated-fill text-teal me-1"></i> Your Token: <b style="color:var(--primary-dark)">${esc(token)}</b></span>
+        </div>
+        ${queue?.prediction ? `
+          <div class="pt-2 border-top text-muted small d-flex justify-content-between flex-wrap gap-2" style="font-size: 11px;">
+            <span><i class="bi bi-stopwatch me-1"></i> Avg Consultation Duration: <b>${queue.prediction.avg_consultation_time} min/patient</b> (${queue.prediction.samples_count} sessions analyzed)</span>
+            <span><i class="bi bi-person-workspace me-1"></i> Patient Inside: <b>${queue.prediction.ongoing_remaining_minutes > 0 ? `~${queue.prediction.ongoing_remaining_minutes} min remaining` : 'Calling next'}</b></span>
+          </div>
+        ` : ''}
       </div>
     </div>
   `;
@@ -368,7 +570,11 @@ async function patientPage(c) {
     await renderHospitals(c);
   } else if (active === "appointments") {
     const d = await api("/patient/home");
-    c.innerHTML = `<div class="section-title">My Appointments</div><div class="panel"><table class="table"><thead><tr><th>Doctor</th><th>OPD</th><th>Date</th><th>Token</th><th>Status</th><th>Actions</th></tr></thead><tbody>${d.appointments.filter((a) => a.status !== "completed").map((a) => `<tr><td><b>${esc(a.doctor)}</b><br><small>${esc(a.specialization)}</small></td><td>${esc(a.department)}</td><td>${a.date} · ${a.time}</td><td><b>${esc(a.token || "—")}</b></td><td><span class="pill ${a.status === "checked_in" ? "purple" : "orange"}">${esc(a.status)}</span></td><td class="appointment-actions"><button class="btn btn-sm btn-outline-primary" onclick="openAppointmentDetails(${a.id})">View details</button><button class="btn btn-sm btn-outline-primary" onclick="downloadSlip(${a.id})"><i class="bi bi-download"></i> Download</button></td></tr>`).join("") || '<tr><td colspan="6" class="empty">No active appointments. Completed visits appear in History.</td></tr>'}</tbody></table></div><div class="temporary-notice"><i class="bi bi-hourglass-split"></i> Temporary Feature: demo appointments are moved to History after 45 seconds.</div>`;
+    const activeApps = d.appointments.filter((a) => a.status !== "completed" && a.status !== "cancelled");
+    c.innerHTML = `<div class="section-title">My Appointments</div><div class="panel"><table class="table"><thead><tr><th>Doctor</th><th>OPD</th><th>Date</th><th>Token</th><th>Status</th><th>Actions</th></tr></thead><tbody>${activeApps.map((a) => {
+      const isRemovable = !["checked_in", "called", "ongoing", "in_consultation", "serving", "completed"].includes(a.status);
+      return `<tr><td><b>${esc(a.doctor)}</b><br><small>${esc(a.specialization)}</small></td><td>${esc(a.department)}</td><td>${a.date} · ${a.time}</td><td><b>${esc(a.token || "—")}</b></td><td><span class="pill ${a.status === "checked_in" ? "purple" : "orange"}">${esc(a.status)}</span></td><td class="appointment-actions"><button class="btn btn-sm btn-outline-primary" onclick="openAppointmentDetails(${a.id})">View details</button><button class="btn btn-sm btn-outline-primary" onclick="downloadSlip(${a.id})"><i class="bi bi-download"></i> Download</button>${isRemovable ? `<button class="btn btn-sm btn-outline-danger" onclick="cancelAppointment(${a.id}, '${a.status}')"><i class="bi bi-trash"></i> Remove</button>` : `<button class="btn btn-sm btn-outline-secondary" disabled title="Ongoing/Completed visits cannot be removed"><i class="bi bi-lock"></i> Locked</button>`}</td></tr>`;
+    }).join("") || '<tr><td colspan="6" class="empty">No active appointments. Completed visits appear in History.</td></tr>'}</tbody></table></div><div class="temporary-notice"><i class="bi bi-hourglass-split"></i> Temporary Feature: demo appointments are moved to History after 45 seconds.</div>`;
     startTemporaryAppointmentTimer(d.appointments);
   } else if (active === "history") {
     const d = await api("/patient/home");
@@ -470,22 +676,128 @@ async function downloadSlip(id) {
 async function doctorPage(c) {
   if (active === "dashboard") {
     const d = await api("/doctor/dashboard");
-    c.innerHTML = `<div class="hero"><h1>Doctor Dashboard</h1><p>Manage today's appointments, queue and consultations.</p></div><div class="section-title">Today's Overview</div><div class="stats"><div class="stat-card"><span>Booked</span><strong>${d.stats.booked}</strong></div><div class="stat-card"><span>Checked In</span><strong>${d.stats.checked_in}</strong></div><div class="stat-card"><span>Completed</span><strong>${d.stats.completed}</strong></div><div class="stat-card"><span>Waiting</span><strong>${d.stats.waiting}</strong></div></div><div class="section-title">Current Queue</div><div class="panel"><button class="primary-btn" style="width:auto;padding:10px 20px;margin:0 0 15px" onclick="nextPatient()">Call Next Patient</button>${queueTable(d.queue, true)}</div>`;
+    const isAvail = d.doctor.is_available;
+    c.innerHTML = `
+      <div class="d-flex justify-content-between align-items-center mb-3 p-3 rounded shadow-sm" style="background:var(--panel-bg,#ffffff); border:1px solid var(--border-color,#e2e8f0);">
+        <div>
+          <h4 class="m-0 text-teal"><i class="bi bi-person-badge me-2"></i>Dr. ${esc(d.doctor.name)}</h4>
+          <small class="text-muted">${esc(d.doctor.specialization)} · Status: 
+            <b class="${isAvail ? 'text-success' : 'text-danger'}">
+              ${isAvail ? '🟢 Free / Available' : '🔴 Busy / Unavailable'}
+            </b>
+          </small>
+        </div>
+        <button class="btn btn-sm ${isAvail ? 'btn-outline-danger' : 'btn-success'}" onclick="toggleDoctorAvailability(${!isAvail})">
+          <i class="bi bi-${isAvail ? 'dash-circle' : 'check-circle'} me-1"></i>
+          ${isAvail ? 'Mark as Busy' : 'Mark as Free / Available'}
+        </button>
+      </div>
+
+      <div class="section-title">Today's Overview</div>
+      <div class="stats">
+        <div class="stat-card"><span>Booked</span><strong>${d.stats.booked}</strong></div>
+        <div class="stat-card"><span>Checked In / Ongoing</span><strong>${d.stats.checked_in}</strong></div>
+        <div class="stat-card"><span>Completed</span><strong>${d.stats.completed}</strong></div>
+        <div class="stat-card"><span>Waiting</span><strong>${d.stats.waiting}</strong></div>
+      </div>
+
+      <div class="section-title">Today's Patient Queue & Appointments</div>
+      <div class="panel">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <span class="fw-bold"><i class="bi bi-people-fill text-teal me-1"></i> Patients</span>
+          <button class="btn btn-sm btn-teal" onclick="nextPatient()"><i class="bi bi-person-plus-fill me-1"></i> Call Next Patient</button>
+        </div>
+        ${queueTable(d.queue.length ? d.queue : d.today_appointments, true)}
+      </div>
+    `;
   } else if (active === "queue") {
     const d = await api("/doctor/dashboard");
     c.innerHTML = `<div class="section-title">Live OPD Queue</div><div class="panel">${queueTable(d.queue, true)}</div>`;
   } else if (active === "appointments") {
     const a = await api("/doctor/appointments");
-    c.innerHTML = `<div class="section-title">Appointments</div><div class="panel">${queueTable(a, false)}</div>`;
+    c.innerHTML = `<div class="section-title">All Doctor Appointments</div><div class="panel">${queueTable(a, false)}</div>`;
   } else if (active === "slots") {
-    c.innerHTML = `<div class="section-title">Manage Slots</div><div class="panel"><div class="row g-3"><div class="col-md-4"><label class="small fw-bold">Date</label><input id="slotDate" class="form-control" type="date" value="${getLocalDateStr()}"></div><div class="col-md-3"><label class="small fw-bold">Start</label><input id="slotStart" class="form-control" type="time" value="10:00"></div><div class="col-md-3"><label class="small fw-bold">End</label><input id="slotEnd" class="form-control" type="time" value="10:30"></div><div class="col-md-2"><label class="small fw-bold">Capacity</label><input id="slotCap" class="form-control" type="number" value="10"></div></div><button class="primary-btn" style="width:auto" onclick="addSlot()">Create Slot</button></div>`;
-  } else
+    c.innerHTML = `<div class="section-title">Manage Slots</div><div class="panel"><div class="row g-3"><div class="col-md-4"><label class="small fw-bold">Date</label><input id="slotDate" class="form-control" type="date" value="${getLocalDateStr()}"></div><div class="col-md-3"><label class="small fw-bold">Start</label><input id="slotStart" class="form-control" type="time" value="10:00"></div><div class="col-md-3"><label class="small fw-bold">End</label><input id="slotEnd" class="form-control" type="time" value="10:30"></div><div class="col-md-2"><label class="small fw-bold">Capacity</label><input id="slotCap" class="form-control" type="number" value="10"></div></div><button class="primary-btn mt-3" style="width:auto" onclick="addSlot()">Create Slot</button></div>`;
+  } else {
     c.innerHTML = '<div class="panel empty">Profile management module.</div>';
+  }
 }
-function queueTable(rows, doctor) {
-  if (!rows.length) return '<div class="empty">No records.</div>';
-  return `<table class="table"><thead><tr><th>Token</th><th>${doctor ? "Patient" : "Date"}</th><th>${doctor ? "Position" : "Time"}</th>${doctor ? "" : "<th>Symptoms</th>"}<th>Status</th><th></th></tr></thead><tbody>${rows.map((r) => `<tr><td><b>${esc(r.token || r.token_no || "—")}</b></td><td>${doctor ? esc(r.patient_id || "Patient") : esc(r.date)}</td><td>${doctor ? esc(r.position || "—") : esc(r.time)}</td>${doctor ? "" : `<td>${esc(r.symptoms || "Not provided")}</td>`}<td><span class="pill purple">${esc(r.status)}</span></td><td>${doctor && r.status === "called" ? `<button class="btn btn-sm btn-success" onclick="completePatient(${r.id})">Complete</button>` : ""}</td></tr>`).join("")}</tbody></table>`;
+
+function queueTable(rows, isQueue) {
+  if (!rows || !rows.length) return '<div class="empty">No active patient appointments found.</div>';
+  return `
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Token</th>
+          <th>Patient Name</th>
+          <th>Phone</th>
+          <th>Symptoms</th>
+          <th>Status</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${rows.map((r) => {
+          const status = r.status || "booked";
+          const isOngoing = status === "called" || status === "ongoing";
+          const isDone = status === "completed";
+          const targetId = r.id || r.queue_id || r.appointment_id;
+          return `
+            <tr>
+              <td><b class="token-pill">${esc(r.token || r.token_no || "—")}</b></td>
+              <td><b>${esc(r.patient_name || "Patient")}</b></td>
+              <td>${esc(r.patient_phone || "—")}</td>
+              <td><small>${esc(r.symptoms || "Routine Consultation")}</small></td>
+              <td>
+                <span class="pill ${isOngoing ? "purple" : isDone ? "green" : "orange"}">
+                  ${esc(status.replace("_", " "))}
+                </span>
+              </td>
+              <td class="appointment-actions">
+                ${!isDone && !isOngoing ? `
+                  <button class="btn btn-sm btn-teal" onclick="markDoctorOngoing(${targetId})">
+                    <i class="bi bi-play-circle me-1"></i> Mark Ongoing
+                  </button>
+                ` : ''}
+                ${isOngoing ? `
+                  <button class="btn btn-sm btn-success" onclick="completePatient(${targetId})">
+                    <i class="bi bi-check-circle me-1"></i> Complete
+                  </button>
+                ` : ''}
+                ${isDone ? `
+                  <span class="text-success small fw-bold"><i class="bi bi-check-all me-1"></i> Completed</span>
+                ` : ''}
+              </td>
+            </tr>
+          `;
+        }).join("")}
+      </tbody>
+    </table>
+  `;
 }
+
+async function toggleDoctorAvailability(status) {
+  try {
+    const r = await api(`/doctor/availability?is_available=${status}`, { method: "POST" });
+    toast(r.message);
+    render();
+  } catch (e) {
+    toast(e.message);
+  }
+}
+window.toggleDoctorAvailability = toggleDoctorAvailability;
+
+async function markDoctorOngoing(id) {
+  try {
+    const r = await api(`/doctor/queue/${id}/ongoing`, { method: "POST" });
+    toast(r.message || "Patient marked as ONGOING");
+    render();
+  } catch (e) {
+    toast(e.message);
+  }
+}
+window.markDoctorOngoing = markDoctorOngoing;
 async function nextPatient() {
   try {
     const r = await api("/doctor/queue/next", { method: "POST" });
@@ -624,6 +936,191 @@ async function saveProfile(mode) {
     toast(e.message);
   }
 }
+async function openDoctorProfileModal(mode = "edit") {
+  let p = {};
+  let hospitals = [];
+  try {
+    p = await api("/doctor/profile");
+  } catch (e) {
+    p = {};
+  }
+  try {
+    hospitals = await api("/patient/hospitals");
+  } catch (e) {
+    hospitals = [];
+  }
+  showModal(doctorProfileModalHTML(mode, p, hospitals));
+}
+
+function doctorProfileModalHTML(mode, p, hospitals) {
+  if (mode === "view") return doctorProfileViewHTML(p);
+  const title = mode === "onboarding" ? "Complete Your Doctor Profile" : "Edit Doctor Profile";
+  const sub = mode === "onboarding"
+    ? "Welcome to Querly! Please specify your practice details, hospital, department, and consultation fee."
+    : "Update your medical practice information shown to patients.";
+  const closeBtn = mode === "onboarding" ? "" : `<button class="close" onclick="closeModal()">&times;</button>`;
+
+  const defaultDepts = [
+    { id: 1, name: "General Medicine" },
+    { id: 2, name: "Cardiology" },
+    { id: 3, name: "Orthopedics" },
+    { id: 4, name: "Pediatrics" },
+    { id: 5, name: "Neurology" },
+    { id: 6, name: "Dermatology" },
+    { id: 7, name: "ENT" },
+    { id: 8, name: "Gynecology" }
+  ];
+
+  let deptOptions = [];
+  if (hospitals && hospitals.length) {
+    hospitals.forEach(h => {
+      if (h.departments) {
+        h.departments.forEach(d => {
+          deptOptions.push({ id: d.id, name: `${d.name} (${h.name})` });
+        });
+      }
+    });
+  }
+  if (!deptOptions.length) deptOptions = defaultDepts;
+
+  return `
+    ${closeBtn}
+    <h3><i class="bi bi-person-badge-fill text-teal me-2"></i>${title}</h3>
+    <p class="text-muted small">${sub}</p>
+    
+    <div class="section-title" style="margin:18px 0 10px">Doctor Information</div>
+    <div class="row g-3">
+      <div class="col-md-6">
+        <label class="small fw-bold">Full Name</label>
+        <input id="docPfName" class="form-control" value="${esc(p.name || currentUser.name || "")}" required>
+      </div>
+      <div class="col-md-6">
+        <label class="small fw-bold">Phone Number</label>
+        <input id="docPfPhone" class="form-control" value="${esc(p.phone || currentUser.phone || "")}" placeholder="+91 9876543210" required>
+      </div>
+    </div>
+
+    <div class="section-title" style="margin:18px 0 10px">Hospital &amp; Department</div>
+    <div class="row g-3">
+      <div class="col-md-6">
+        <label class="small fw-bold">Affiliated Hospital</label>
+        <select id="docPfHospital" class="form-control" required>
+          ${hospitals && hospitals.length ? hospitals.map(h => `<option value="${h.id}" ${p.hospital_id === h.id ? 'selected' : ''}>${esc(h.name)} - ${esc(h.city)}</option>`).join("") : '<option value="1">City Care Hospital - Metro</option>'}
+        </select>
+      </div>
+      <div class="col-md-6">
+        <label class="small fw-bold">Department</label>
+        <select id="docPfDept" class="form-control" required>
+          ${deptOptions.map(d => `<option value="${d.id}" ${p.department_id === d.id ? 'selected' : ''}>${esc(d.name)}</option>`).join("")}
+        </select>
+      </div>
+    </div>
+
+    <div class="section-title" style="margin:18px 0 10px">Practice &amp; Fee Details</div>
+    <div class="row g-3">
+      <div class="col-md-6">
+        <label class="small fw-bold">Specialization</label>
+        <input id="docPfSpec" class="form-control" value="${esc(p.specialization || "General Medicine")}" placeholder="e.g. Cardiology, Neurology, Pediatrics" required>
+      </div>
+      <div class="col-md-6">
+        <label class="small fw-bold">Consultation Fee (₹)</label>
+        <input id="docPfFee" type="number" class="form-control" value="${p.consultation_fee || 500}" min="0" required>
+      </div>
+      <div class="col-md-6">
+        <label class="small fw-bold">Qualifications / Degrees</label>
+        <input id="docPfQual" class="form-control" value="${esc(p.qualification || "MBBS, MD")}" placeholder="e.g. MBBS, MD - General Medicine">
+      </div>
+      <div class="col-md-6">
+        <label class="small fw-bold">Years of Experience</label>
+        <input id="docPfExp" type="number" class="form-control" value="${p.experience_years || 5}" min="0" max="70">
+      </div>
+      <div class="col-12">
+        <label class="small fw-bold">Bio / Practice Summary</label>
+        <textarea id="docPfBio" class="form-control" rows="2" placeholder="Brief description of clinical expertise, consultation hours, etc.">${esc(p.bio || "")}</textarea>
+      </div>
+    </div>
+
+    <button class="primary-btn mt-3" onclick="saveDoctorProfile('${mode}')">${mode === "onboarding" ? "Save &amp; Open Dashboard" : "Save Changes"}</button>
+  `;
+}
+
+function doctorProfileViewHTML(p) {
+  const field = (label, value, wide) =>
+    `<div class="${wide ? "col-12" : "col-md-6"}"><label class="small fw-bold">${label}</label><div class="form-control profile-view-field" style="background:#f4f5f9;color:#3a3a4d;cursor:default;">${esc(value || "—")}</div></div>`;
+  return `
+    <button class="close" onclick="closeModal()">&times;</button>
+    <h3><i class="bi bi-person-badge-fill text-teal me-2"></i>Doctor Profile</h3>
+    <p class="text-muted small">Your medical practice and affiliation details.</p>
+    <div class="section-title" style="margin:18px 0 10px">Doctor Information</div>
+    <div class="row g-3">
+      ${field("Full Name", p.name || currentUser.name)}
+      ${field("Phone Number", p.phone || currentUser.phone)}
+    </div>
+    <div class="section-title" style="margin:18px 0 10px">Hospital &amp; Department</div>
+    <div class="row g-3">
+      ${field("Hospital", p.hospital_name)}
+      ${field("Department", p.department_name)}
+    </div>
+    <div class="section-title" style="margin:18px 0 10px">Practice Details</div>
+    <div class="row g-3">
+      ${field("Specialization", p.specialization)}
+      ${field("Consultation Fee", "₹" + (p.consultation_fee || 500))}
+      ${field("Qualifications", p.qualification)}
+      ${field("Experience", (p.experience_years || 5) + " Years")}
+      ${field("Bio Summary", p.bio, true)}
+    </div>
+    <button class="primary-btn mt-3" onclick="closeModal(); openDoctorProfileModal('edit')">Edit Profile</button>
+  `;
+}
+
+async function saveDoctorProfile(mode) {
+  const name = $("#docPfName").value.trim();
+  const phone = $("#docPfPhone").value.trim();
+  const hospId = parseInt($("#docPfHospital").value, 10);
+  const deptId = parseInt($("#docPfDept").value, 10);
+  const spec = $("#docPfSpec").value.trim();
+  const fee = parseFloat($("#docPfFee").value);
+
+  if (!name) return toast("Full name is required");
+  if (!phone) return toast("Phone number is required");
+  if (!spec) return toast("Specialization is required");
+  if (isNaN(fee) || fee < 0) return toast("Enter a valid consultation fee");
+
+  const payload = {
+    name,
+    phone,
+    hospital_id: hospId || 1,
+    department_id: deptId || 1,
+    specialization: spec,
+    consultation_fee: fee,
+    qualification: $("#docPfQual").value.trim() || null,
+    experience_years: parseInt($("#docPfExp").value, 10) || 5,
+    bio: $("#docPfBio").value.trim() || null,
+  };
+
+  try {
+    await api("/doctor/profile", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
+
+    currentUser.name = name;
+    currentUser.phone = phone;
+    localStorage.setItem("mq_user", JSON.stringify(currentUser));
+    $("#userName").textContent = name;
+    $("#avatar").textContent = name[0].toUpperCase();
+
+    closeModal();
+    toast(mode === "onboarding" ? "Welcome Doctor! Profile completed." : "Doctor Profile updated.");
+    active = "dashboard";
+    render();
+  } catch (e) {
+    toast(e.message);
+  }
+}
+window.openDoctorProfileModal = openDoctorProfileModal;
+window.saveDoctorProfile = saveDoctorProfile;
+
 function toggleUserMenu(e) {
   e.stopPropagation();
   const existing = document.getElementById("userMenu");
@@ -634,7 +1131,8 @@ function toggleUserMenu(e) {
   const menu = document.createElement("div");
   menu.id = "userMenu";
   menu.className = "user-menu";
-  menu.innerHTML = `<div class="user-menu-head"><div class="avatar">${esc(currentUser.name[0].toUpperCase())}</div><div><b>${esc(currentUser.name)}</b><small>${esc(currentUser.role[0].toUpperCase() + currentUser.role.slice(1))}</small></div></div><div class="user-menu-divider"></div><button class="user-menu-item" onclick="closeUserMenuAnd(function(){openProfileModal('view')})"><i class="bi bi-person"></i> My Profile</button><div class="user-menu-divider"></div><button class="user-menu-item danger" onclick="doLogout()"><i class="bi bi-box-arrow-left"></i> Logout</button>`;
+  const openProfFn = currentUser.role === "doctor" ? "openDoctorProfileModal('view')" : "openProfileModal('view')";
+  menu.innerHTML = `<div class="user-menu-head"><div class="avatar">${esc(currentUser.name[0].toUpperCase())}</div><div><b>${esc(currentUser.name)}</b><small>${esc(currentUser.role[0].toUpperCase() + currentUser.role.slice(1))}</small></div></div><div class="user-menu-divider"></div><button class="user-menu-item" onclick="closeUserMenuAnd(function(){${openProfFn}})"><i class="bi bi-person"></i> My Profile</button><div class="user-menu-divider"></div><button class="user-menu-item danger" onclick="doLogout()"><i class="bi bi-box-arrow-left"></i> Logout</button>`;
   $(".profile").appendChild(menu);
   document.addEventListener("click", closeUserMenuOnce, { once: true });
 }
@@ -680,6 +1178,23 @@ window.finishConsult = finishConsult;
 window.addSlot = addSlot;
 window.closeModal = closeModal;
 window.openProfileModal = openProfileModal;
+async function cancelAppointment(id, status) {
+  const nonRemovable = ["checked_in", "called", "ongoing", "in_consultation", "serving", "completed"];
+  if (nonRemovable.includes(status)) {
+    return toast("Ongoing and completed appointments cannot be removed.");
+  }
+  if (!confirm("Are you sure you want to remove this appointment?")) return;
+  try {
+    const r = await api(`/patient/appointments/${id}`, { method: "DELETE" });
+    toast(r.message || "Appointment removed successfully");
+    closeModal();
+    renderNav();
+    render();
+  } catch (e) {
+    toast(e.message);
+  }
+}
+window.cancelAppointment = cancelAppointment;
 window.saveProfile = saveProfile;
 window.toggleUserMenu = toggleUserMenu;
 window.closeUserMenuAnd = closeUserMenuAnd;
@@ -691,7 +1206,6 @@ window.cancelQueue = cancelQueue;
 window.saveDoctorSchedule = saveDoctorSchedule;
 window.toggleDoctorDay = toggleDoctorDay;
 window.toggleDoctorMaster = toggleDoctorMaster;
-window.quickLogin = quickLogin;
 $("#logout").onclick = () => {
   localStorage.clear();
   location.reload();
@@ -735,12 +1249,14 @@ $("#loginForm").onsubmit = async (e) => {
 $("#registerForm").onsubmit = async (e) => {
   e.preventDefault();
   try {
+    const selectedRole = $("#regRole")?.value || selectedAuthRole || "patient";
     const r = await api("/auth/register", {
       method: "POST",
       body: JSON.stringify({
         name: $("#regName").value,
         email: $("#regEmail").value,
         phone: $("#regPhone").value,
+        role: selectedRole,
         password: $("#regPassword").value,
       }),
     });
@@ -752,6 +1268,7 @@ $("#registerForm").onsubmit = async (e) => {
     renderNav();
     render();
     if (currentUser.role === "patient") openProfileModal("onboarding");
+    else if (currentUser.role === "doctor") openDoctorProfileModal("onboarding");
   } catch (e) {
     toast(e.message);
   }
@@ -1035,10 +1552,17 @@ function toggleDoctorMaster(doctorId) {
   }
 }
 
-function quickLogin(email, password) {
-  $("#loginEmail").value = email;
-  $("#loginPassword").value = password;
-  $("#loginForm").dispatchEvent(new Event("submit"));
+function togglePasswordVisibility(inputId, btn) {
+  const input = document.getElementById(inputId);
+  if (!input) return;
+  if (input.type === "password") {
+    input.type = "text";
+    btn.innerHTML = '<i class="bi bi-eye-slash"></i>';
+  } else {
+    input.type = "password";
+    btn.innerHTML = '<i class="bi bi-eye"></i>';
+  }
 }
+window.togglePasswordVisibility = togglePasswordVisibility;
 
 boot();
