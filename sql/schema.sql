@@ -1,7 +1,5 @@
-CREATE DATABASE IF NOT EXISTS mediqueue CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-
-USE mediqueue;
-
+CREATE DATABASE IF NOT EXISTS querly CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+USE querly;
 CREATE TABLE users (
     id INT AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(120) NOT NULL,
@@ -12,7 +10,6 @@ CREATE TABLE users (
     is_active BOOLEAN DEFAULT TRUE,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
-
 CREATE TABLE hospitals (
     id INT AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(180) NOT NULL,
@@ -21,7 +18,6 @@ CREATE TABLE hospitals (
     phone VARCHAR(30),
     email VARCHAR(180)
 );
-
 CREATE TABLE departments (
     id INT AUTO_INCREMENT PRIMARY KEY,
     hospital_id INT NOT NULL,
@@ -29,7 +25,6 @@ CREATE TABLE departments (
     description TEXT,
     FOREIGN KEY (hospital_id) REFERENCES hospitals (id)
 );
-
 CREATE TABLE doctors (
     id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT UNIQUE NOT NULL,
@@ -42,7 +37,6 @@ CREATE TABLE doctors (
     FOREIGN KEY (hospital_id) REFERENCES hospitals (id),
     FOREIGN KEY (department_id) REFERENCES departments (id)
 );
-
 CREATE TABLE slots (
     id INT AUTO_INCREMENT PRIMARY KEY,
     doctor_id INT NOT NULL,
@@ -54,7 +48,6 @@ CREATE TABLE slots (
     UNIQUE KEY uq_doctor_slot (doctor_id, date, start_time),
     FOREIGN KEY (doctor_id) REFERENCES doctors (id)
 );
-
 CREATE TABLE appointments (
     id INT AUTO_INCREMENT PRIMARY KEY,
     patient_id INT NOT NULL,
@@ -70,7 +63,6 @@ CREATE TABLE appointments (
     FOREIGN KEY (doctor_id) REFERENCES doctors (id),
     FOREIGN KEY (slot_id) REFERENCES slots (id)
 );
-
 CREATE TABLE queue (
     id INT AUTO_INCREMENT PRIMARY KEY,
     appointment_id INT UNIQUE NOT NULL,
@@ -86,7 +78,6 @@ CREATE TABLE queue (
     FOREIGN KEY (patient_id) REFERENCES users (id),
     FOREIGN KEY (doctor_id) REFERENCES doctors (id)
 );
-
 CREATE TABLE e_slips (
     id INT AUTO_INCREMENT PRIMARY KEY,
     appointment_id INT UNIQUE NOT NULL,
@@ -94,7 +85,6 @@ CREATE TABLE e_slips (
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (appointment_id) REFERENCES appointments (id)
 );
-
 CREATE TABLE consultations (
     id INT AUTO_INCREMENT PRIMARY KEY,
     appointment_id INT UNIQUE NOT NULL,
@@ -107,7 +97,6 @@ CREATE TABLE consultations (
     FOREIGN KEY (appointment_id) REFERENCES appointments (id),
     FOREIGN KEY (doctor_id) REFERENCES doctors (id)
 );
-
 CREATE TABLE notifications (
     id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT NOT NULL,
@@ -117,7 +106,6 @@ CREATE TABLE notifications (
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users (id)
 );
-
 CREATE TABLE payments (
     id INT AUTO_INCREMENT PRIMARY KEY,
     appointment_id INT NOT NULL,
@@ -127,7 +115,6 @@ CREATE TABLE payments (
     payment_date DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (appointment_id) REFERENCES appointments (id)
 );
-
 CREATE TABLE feedback (
     id INT AUTO_INCREMENT PRIMARY KEY,
     appointment_id INT NOT NULL,
@@ -136,7 +123,6 @@ CREATE TABLE feedback (
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (appointment_id) REFERENCES appointments (id)
 );
-
 CREATE TABLE audit_logs (
     id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT,

@@ -4,13 +4,13 @@ from datetime import date, time, timedelta
 
 from sqlalchemy import select
 
-from .auth import hash_password
-from .database import Base, SessionLocal, engine
-from .models import Department, Doctor, Hospital, Slot, User
+from app.auth import hash_password
+from app.database import Base, SessionLocal, engine
+from app.models import Department, Doctor, Hospital, Slot, User
 
 Base.metadata.create_all(bind=engine)
 
-CATALOG_PATH = Path(__file__).resolve().parents[2] / 'data' / 'hospital_catalog.json'
+CATALOG_PATH = Path(__file__).resolve().parent.parent / 'data' / 'hospital_catalog.json'
 
 
 def load_catalog():
@@ -21,11 +21,11 @@ def load_catalog():
 def get_or_create_user(db, name, email, role='doctor'):
     user = db.scalar(select(User).where(User.email == email))
     if user:
-        default_pwd = 'Patient@123' if role == 'patient' else ('Admin@123' if role == 'admin' else 'Doctor@123')
+        default_pwd = 'Patient@123' if role == 'patient' else ('Admin@123' if role == 'admin' else ('Hospital@123' if role == 'hospital' else 'Doctor@123'))
         user.password_hash = hash_password(default_pwd)
         db.flush()
         return user
-    default_pwd = 'Patient@123' if role == 'patient' else ('Admin@123' if role == 'admin' else 'Doctor@123')
+    default_pwd = 'Patient@123' if role == 'patient' else ('Admin@123' if role == 'admin' else ('Hospital@123' if role == 'hospital' else 'Doctor@123'))
     user = User(
         name=name,
         email=email,
@@ -109,8 +109,9 @@ db = SessionLocal()
 try:
     get_or_create_user(db, 'Querly Admin', 'admin@querly.com', 'admin')
     get_or_create_user(db, 'Yashika Gupta', 'patient@querly.com', 'patient')
+    get_or_create_user(db, 'Hospital Desk', 'hospital@querly.com', 'hospital')
     seed_catalog(db)
     db.commit()
-    print('Seeded Querly hospital, department, doctor and slot catalog.')
+    print('Seeded Querly hospital, department, doctor, slot, and hospital desk user catalog.')
 finally:
     db.close()
