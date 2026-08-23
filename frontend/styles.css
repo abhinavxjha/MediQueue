@@ -395,7 +395,7 @@ textarea,
   box-shadow: var(--shadow-raised-soft);
   color: rgba(255, 255, 255, 0.82);
   padding: 11px;
-
+  
 }
 
 .main {
@@ -632,11 +632,9 @@ header {
   color: #11865b;
 }
 
-.pill.purple,
-.pill.teal {
-  background: #f0fdfa;
-  color: #0f766e;
-  border: 1px solid rgba(15, 118, 110, 0.2);
+.pill.purple {
+  background: #ece9ff;
+  color: #5f53ee;
 }
 
 .pill.orange {
@@ -647,55 +645,6 @@ header {
 .pill.red {
   background: #ffeaf0;
   color: #c83b5b;
-}
-
-.btn-teal {
-  background: var(--primary);
-  color: #ffffff;
-  border: 0;
-  font-weight: 600;
-  border-radius: 8px;
-  transition: all 0.2s ease;
-}
-
-.btn-teal:hover {
-  background: var(--primary-dark);
-  color: #ffffff;
-}
-
-.token-pill {
-  display: inline-block;
-  background: rgba(6, 131, 148, 0.1);
-  color: var(--primary);
-  padding: 4px 10px;
-  border-radius: 8px;
-  font-weight: 800;
-  font-size: 13px;
-}
-
-.table-active-row {
-  background-color: rgba(6, 131, 148, 0.05) !important;
-  border-left: 4px solid var(--primary);
-}
-
-.text-teal {
-  color: var(--primary) !important;
-}
-
-.blinking-text {
-  animation: text-pulse 1.8s infinite;
-}
-
-@keyframes text-pulse {
-
-  0%,
-  100% {
-    opacity: 1;
-  }
-
-  50% {
-    opacity: 0.5;
-  }
 }
 
 .queue-live {
@@ -921,7 +870,7 @@ header {
   text-decoration: none;
 }
 
-.hospital-card-body>small {
+.hospital-card-body > small {
   display: block;
   margin-top: 10px;
   color: var(--muted);
@@ -1034,7 +983,7 @@ header {
   font-size: 20px;
 }
 
-.detail-modal>p {
+.detail-modal > p {
   margin: 0 0 18px;
   color: var(--muted);
   font-size: 12px;
@@ -1172,7 +1121,6 @@ header {
 }
 
 @media (max-width: 1050px) {
-
   .cards,
   .stats {
     grid-template-columns: repeat(2, 1fr);
@@ -1255,7 +1203,7 @@ header {
     opacity: 0.2;
   }
 
-  .profile>div:not(.avatar) {
+  .profile > div:not(.avatar) {
     display: none;
   }
 
