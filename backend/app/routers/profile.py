@@ -36,8 +36,8 @@ def _save(payload: PatientProfileIn, user: User, db: Session) -> PatientProfileO
         profile = PatientProfile(user_id=user.id)
         db.add(profile)
     profile.date_of_birth = payload.date_of_birth
-    profile.sex = payload.sex.value
-    profile.blood_group = payload.blood_group.value if payload.blood_group else None
+    profile.sex = payload.sex.value if hasattr(payload.sex, 'value') else str(payload.sex)
+    profile.blood_group = payload.blood_group.value if payload.blood_group and hasattr(payload.blood_group, 'value') else (str(payload.blood_group) if payload.blood_group else None)
     profile.address = payload.address
     profile.city = payload.city
     profile.emergency_contact_name = payload.emergency_contact_name
@@ -50,16 +50,16 @@ def _save(payload: PatientProfileIn, user: User, db: Session) -> PatientProfileO
 
 
 @router.get('/profile', response_model=PatientProfileOut)
-def get_profile(user: User = Depends(require_roles('patient')), db: Session = Depends(get_db)):
+def get_profile(user: User = Depends(require_roles('patient', 'doctor', 'admin')), db: Session = Depends(get_db)):
     profile = db.scalar(select(PatientProfile).where(PatientProfile.user_id == user.id))
     return _to_out(user, profile)
 
 
 @router.post('/profile', response_model=PatientProfileOut)
-def create_or_update_profile(payload: PatientProfileIn, user: User = Depends(require_roles('patient')), db: Session = Depends(get_db)):
+def create_or_update_profile(payload: PatientProfileIn, user: User = Depends(require_roles('patient', 'doctor', 'admin')), db: Session = Depends(get_db)):
     return _save(payload, user, db)
 
 
 @router.put('/profile', response_model=PatientProfileOut)
-def update_profile(payload: PatientProfileIn, user: User = Depends(require_roles('patient')), db: Session = Depends(get_db)):
+def update_profile(payload: PatientProfileIn, user: User = Depends(require_roles('patient', 'doctor', 'admin')), db: Session = Depends(get_db)):
     return _save(payload, user, db)
