@@ -705,10 +705,6 @@ header {
   border: 1px solid rgba(15, 118, 110, 0.2);
 }
 
-background: #ece9ff;
-color: #5f53ee;
-}
-
 .pill.orange {
   background: #fff4df;
   color: #b67617;
@@ -727,6 +723,7 @@ color: #5f53ee;
   border-radius: 8px;
   transition: all 0.2s ease;
 }
+
 .btn-teal:hover {
   background: var(--primary-dark);
   color: #ffffff;
@@ -756,8 +753,15 @@ color: #5f53ee;
 }
 
 @keyframes text-pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.5; }
+
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.5;
+  }
 }
 
 .queue-live {
