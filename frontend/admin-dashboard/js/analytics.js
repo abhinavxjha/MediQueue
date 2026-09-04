@@ -1,5 +1,5 @@
 async function renderAnalytics(c) {
-  c.innerHTML = '<div class="section-title"><i class="bi bi-bar-chart-line"></i> OPD Operational Analytics &amp; Machine Learning</div><div class="empty">Loading analytics...</div>';
+  c.innerHTML = '<div class="section-title"><i class="bi bi-bar-chart-line"></i> OPD Operational Analytics</div><div class="empty">Loading analytics...</div>';
   try {
     const d = await api("/admin/dashboard");
     const maxDept = Math.max(...(d.department_breakdown || []).map((x) => x.count), 1);
@@ -7,7 +7,7 @@ async function renderAnalytics(c) {
     c.innerHTML = `
       <div class="hero">
         <div>
-          <h1><i class="bi bi-bar-chart-line-fill"></i> OPD Performance &amp; Data Science Analytics</h1>
+          <h1 class="hero-title"><i class="bi bi-bar-chart-line-fill"></i> OPD Performance</h1>
           <p>Real-time outpatient department KPIs, patient throughput volume, and predictive machine learning models.</p>
         </div>
       </div>

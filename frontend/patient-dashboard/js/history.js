@@ -36,61 +36,63 @@ async function renderAppointments(c) {
     c.innerHTML = `
       <div class="section-title"><i class="bi bi-calendar-check"></i> My Appointments</div>
       <div class="panel">
-        <table class="table">
-          <thead>
-            <tr>
-              <th>Doctor</th>
-              <th>OPD</th>
-              <th>Date & Time</th>
-              <th>Token</th>
-              <th>Status</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${activeApps.map((a) => {
-              const isRemovable = !["checked_in", "called", "ongoing", "in_consultation", "serving", "completed"].includes(a.status);
-              return `
-                <tr>
-                  <td>
-                    <b>${esc(a.doctor)}</b><br>
-                    <small class="text-muted">${esc(a.specialization)}</small>
-                  </td>
-                  <td>${esc(a.department)}</td>
-                  <td>${a.date} · ${a.time}</td>
-                  <td><b class="token-pill">${esc(a.token || "—")}</b></td>
-                  <td>
-                    <span class="pill ${a.status === "checked_in" ? "purple" : "orange"}">
-                      ${esc(a.status.replace("_", " "))}
-                    </span>
-                  </td>
-                  <td class="appointment-actions">
-                    <button class="btn btn-sm btn-outline-primary" onclick="openAppointmentDetails(${a.id})">
-                      <i class="bi bi-eye"></i> Details
-                    </button>
-                    <button class="btn btn-sm btn-outline-primary" onclick="downloadSlip(${a.id})">
-                      <i class="bi bi-download"></i> Slip
-                    </button>
-                    ${a.status === "booked" ? `
-                      <button class="btn btn-sm btn-teal" onclick="checkIn(${a.id})">
-                        <i class="bi bi-qr-code-scan"></i> Check In
+        <div class="table-responsive">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Doctor</th>
+                <th>OPD</th>
+                <th>Date & Time</th>
+                <th>Token</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${activeApps.map((a) => {
+                const isRemovable = !["checked_in", "called", "ongoing", "in_consultation", "serving", "completed"].includes(a.status);
+                return `
+                  <tr>
+                    <td>
+                      <b>${esc(a.doctor)}</b><br>
+                      <small class="text-muted">${esc(a.specialization)}</small>
+                    </td>
+                    <td>${esc(a.department)}</td>
+                    <td>${a.date} · ${a.time}</td>
+                    <td><b class="token-pill">${esc(a.token || "—")}</b></td>
+                    <td>
+                      <span class="pill ${a.status === "checked_in" ? "purple" : "orange"}">
+                        ${esc(a.status.replace("_", " "))}
+                      </span>
+                    </td>
+                    <td class="appointment-actions">
+                      <button class="btn btn-sm btn-outline-primary" onclick="openAppointmentDetails(${a.id})">
+                        <i class="bi bi-eye"></i> Details
                       </button>
-                    ` : ''}
-                    ${isRemovable ? `
-                      <button class="btn btn-sm btn-outline-danger" onclick="cancelAppointment(${a.id}, '${a.status}')">
-                        <i class="bi bi-trash"></i> Cancel
+                      <button class="btn btn-sm btn-outline-primary" onclick="downloadSlip(${a.id})">
+                        <i class="bi bi-download"></i> Slip
                       </button>
-                    ` : `
-                      <button class="btn btn-sm btn-outline-secondary" disabled title="Ongoing/Completed visits cannot be removed">
-                        <i class="bi bi-lock"></i> Locked
-                      </button>
-                    `}
-                  </td>
-                </tr>
-              `;
-            }).join("") || '<tr><td colspan="6" class="empty">No active appointments. Completed consultations appear in Medical History.</td></tr>'}
-          </tbody>
-        </table>
+                      ${a.status === "booked" ? `
+                        <button class="btn btn-sm btn-teal" onclick="checkIn(${a.id})">
+                          <i class="bi bi-qr-code-scan"></i> Check In
+                        </button>
+                      ` : ''}
+                      ${isRemovable ? `
+                        <button class="btn btn-sm btn-outline-danger" onclick="cancelAppointment(${a.id}, '${a.status}')">
+                          <i class="bi bi-trash"></i> Cancel
+                        </button>
+                      ` : `
+                        <button class="btn btn-sm btn-outline-secondary" disabled title="Ongoing/Completed visits cannot be removed">
+                          <i class="bi bi-lock"></i> Locked
+                        </button>
+                      `}
+                    </td>
+                  </tr>
+                `;
+              }).join("") || '<tr><td colspan="6" class="empty">No active appointments. Completed consultations appear in Medical History.</td></tr>'}
+            </tbody>
+          </table>
+        </div>
       </div>
       <div class="temporary-notice">
         <i class="bi bi-hourglass-split"></i> Temporary Feature: demo appointments move to Medical History after 45 seconds for testing.

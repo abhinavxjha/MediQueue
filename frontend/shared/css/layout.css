@@ -226,7 +226,7 @@ header {
 }
 
 /* Tactile Icon Buttons */
-.icon-btn, .theme-toggle-btn {
+.icon-btn, .theme-toggle-btn, .sidebar-toggle-btn {
   background: var(--surface);
   border: none;
   border-radius: var(--radius-md);
@@ -239,13 +239,62 @@ header {
   position: relative;
   box-shadow: var(--shadow-raised-sm);
   font-size: 17px;
+  flex-shrink: 0;
 }
 
-.icon-btn:hover, .theme-toggle-btn:hover {
+.sidebar-toggle-btn {
+  display: none;
+  font-size: 20px;
+}
+
+.sidebar-close-btn {
+  background: var(--surface);
+  border: none;
+  border-radius: var(--radius-sm);
+  width: 36px;
+  height: 36px;
+  display: none;
+  place-items: center;
+  color: var(--text-muted);
+  cursor: pointer;
+  box-shadow: var(--shadow-raised-sm);
+  font-size: 15px;
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+.sidebar-close-btn:hover {
+  color: var(--status-red);
+  box-shadow: var(--shadow-raised);
+}
+
+.sidebar-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(11, 17, 32, 0.55);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  z-index: 1100;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s ease;
+}
+
+.sidebar-backdrop.show {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+body.sidebar-locked {
+  overflow: hidden;
+}
+
+.icon-btn:hover, .theme-toggle-btn:hover, .sidebar-toggle-btn:hover {
   transform: translateY(-2px);
   box-shadow: var(--shadow-raised);
   color: var(--primary-blue);
 }
+
 
 .icon-btn:active, .theme-toggle-btn:active {
   transform: translateY(1px) scale(0.96);
@@ -473,6 +522,8 @@ header {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
   margin-bottom: 14px;
 }
 
@@ -493,12 +544,13 @@ header {
   padding: 6px 14px;
   border-radius: var(--radius-pill);
   box-shadow: var(--shadow-inset);
+  white-space: nowrap;
 }
 
 .top-app-details {
   display: flex;
   flex-wrap: wrap;
-  gap: 24px;
+  gap: 20px;
   align-items: center;
 }
 
@@ -520,15 +572,236 @@ header {
 
 .top-app-actions {
   display: flex;
+  flex-wrap: wrap;
   gap: 10px;
   margin-top: 16px;
   padding-top: 14px;
   border-top: 2px solid var(--surface-soft);
 }
 
-@media (max-width: 992px) {
-  .app-shell { flex-direction: column; }
-  .sidebar { width: 100%; height: auto; position: static; box-shadow: none; }
-  .main { padding: 20px 16px; }
-  .search { width: 100%; max-width: 280px; }
+/* ==========================================================================
+   Comprehensive Multi-Breakpoint Responsive Rules
+   ========================================================================== */
+
+/* Large Desktop Monitors (1440px - 1920px+) */
+@media (min-width: 1440px) {
+  .main {
+    max-width: 1560px;
+    padding: 34px 48px 70px;
+  }
 }
+
+/* Laptops & Desktops (1200px - 1439px) */
+@media (max-width: 1200px) {
+  .main {
+    padding: 26px 32px 60px;
+  }
+  .sidebar {
+    width: 250px;
+    padding: 24px 14px;
+  }
+  .search {
+    width: 320px;
+  }
+}
+
+/* Tablets & Small Laptops (< 992px) */
+@media (max-width: 992px) {
+  .app-shell {
+    position: relative;
+    overflow-x: hidden;
+  }
+
+  .sidebar-toggle-btn {
+    display: grid;
+  }
+
+  .sidebar-close-btn {
+    display: grid;
+  }
+
+  .sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    width: 285px;
+    max-width: 86vw;
+    height: 100vh;
+    height: 100dvh;
+    z-index: 1200;
+    transform: translateX(-100%);
+    box-shadow: none;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .sidebar.open {
+    transform: translateX(0);
+    box-shadow: var(--shadow-raised-lg), 0 0 50px rgba(0, 0, 0, 0.45);
+  }
+
+  .main {
+    padding: 20px 20px 60px;
+    max-width: 100%;
+    width: 100%;
+  }
+
+  .search {
+    width: 100%;
+    max-width: 320px;
+  }
+}
+
+/* Tablets Portrait & Large Phones (< 768px) */
+@media (max-width: 768px) {
+  .main {
+    padding: 16px 16px 48px;
+  }
+
+  header {
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-bottom: 20px;
+    padding-bottom: 14px;
+  }
+
+  .search {
+    order: 3;
+    width: 100%;
+    max-width: 100%;
+    padding: 10px 16px;
+  }
+
+  .header-actions {
+    margin-left: auto;
+    gap: 10px;
+  }
+
+  .profile {
+    padding: 4px 12px 4px 6px;
+  }
+
+  .profile b {
+    font-size: 12.5px;
+    max-width: 120px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .profile small {
+    display: none;
+  }
+
+  .top-app-card {
+    padding: 18px 20px;
+  }
+
+  .top-app-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .top-app-actions {
+    flex-direction: column;
+  }
+
+  .top-app-actions .btn {
+    width: 100%;
+  }
+
+  .top-app-details {
+    gap: 14px;
+  }
+
+  .modal-box {
+    padding: 26px 20px;
+  }
+}
+
+/* Mobile Phones (< 576px) */
+@media (max-width: 576px) {
+  .main {
+    padding: 14px 12px 44px;
+  }
+
+  .top-app-card {
+    padding: 16px 14px;
+    border-radius: var(--radius-md);
+  }
+
+  .top-app-title {
+    font-size: 14px;
+  }
+
+  .top-app-badge {
+    font-size: 11px;
+    padding: 4px 10px;
+  }
+
+  .modal-backdrop-custom {
+    padding: 12px;
+  }
+
+  .modal-box {
+    padding: 22px 16px;
+    border-radius: var(--radius-lg);
+  }
+
+  .modal-box .close {
+    top: 14px;
+    right: 14px;
+    width: 32px;
+    height: 32px;
+    font-size: 16px;
+  }
+
+  .toast-box {
+    left: 14px;
+    right: 14px;
+    bottom: 16px;
+    text-align: center;
+    border-radius: var(--radius-md);
+  }
+}
+
+/* Small Mobile Screens (< 380px) */
+@media (max-width: 380px) {
+  .main {
+    padding: 10px 8px 36px;
+  }
+
+  .icon-btn, .theme-toggle-btn, .sidebar-toggle-btn {
+    width: 38px;
+    height: 38px;
+    font-size: 15px;
+  }
+
+  .profile {
+    padding: 3px 6px 3px 3px;
+  }
+
+  .profile .avatar, .avatar {
+    width: 32px;
+    height: 32px;
+    font-size: 12px;
+  }
+
+  .profile b {
+    display: none;
+  }
+
+  .profile i.bi-chevron-down {
+    display: none;
+  }
+
+  .top-app-details {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+}
+

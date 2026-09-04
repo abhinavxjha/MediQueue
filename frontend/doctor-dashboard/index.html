@@ -34,6 +34,9 @@
           <b>Querly</b>
           <small>Doctor OPD Portal</small>
         </div>
+        <button type="button" class="sidebar-close-btn" onclick="closeSidebar()" aria-label="Close Navigation Menu">
+          <i class="bi bi-x-lg"></i>
+        </button>
       </div>
 
       <nav id="nav"></nav>
@@ -51,10 +54,15 @@
 
     <main class="main">
       <header>
+        <button type="button" class="sidebar-toggle-btn" onclick="toggleSidebar()" aria-label="Open Navigation Menu">
+          <i class="bi bi-list"></i>
+        </button>
+
         <div class="search">
           <i class="bi bi-search"></i>
           <input placeholder="Filter patients, tokens, phone..." id="globalSearch" />
         </div>
+
 
         <div class="header-actions">
           <button type="button" class="theme-toggle-btn" onclick="toggleTheme()" aria-label="Toggle Light/Dark Theme">

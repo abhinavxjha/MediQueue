@@ -37,7 +37,7 @@
 /* Tactile Quick Action Cards */
 .cards {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr));
   gap: 20px;
   margin-bottom: 32px;
 }
@@ -45,45 +45,51 @@
 .action-card {
   background: var(--surface);
   border-radius: var(--radius-lg);
-  padding: 24px;
+  padding: 22px 20px;
   cursor: pointer;
   box-shadow: var(--shadow-raised);
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px;
   user-select: none;
+  transition: transform 0.2s cubic-bezier(0.2, 0, 0, 1), box-shadow 0.2s cubic-bezier(0.2, 0, 0, 1);
 }
 
 .action-card i {
-  font-size: 28px;
+  font-size: 26px;
   color: var(--primary-blue);
-  transition: transform 0.2s ease;
+  transition: transform 0.2s cubic-bezier(0.2, 0, 0, 1), color 0.2s ease;
 }
 
 .action-card h3 {
-  font-size: 17px;
+  font-size: 16px;
   font-weight: 800;
   margin: 0;
   color: var(--text-main);
 }
 
 .action-card p {
-  font-size: 12.5px;
+  font-size: 12px;
   color: var(--text-muted);
   margin: 0;
 }
 
-.action-card:hover {
-  transform: translateY(-3px);
-  box-shadow: var(--shadow-raised-hover);
+/* Subtle, Tactile, Device-Aware Hover for Desktop Devices */
+@media (hover: hover) and (pointer: fine) {
+  .action-card:hover {
+    transform: translateY(-1.5px);
+    box-shadow: var(--shadow-raised-hover);
+  }
+
+  .action-card:hover i {
+    color: var(--primary-blue-hover);
+    transform: translateY(-0.5px);
+  }
 }
 
-.action-card:hover i {
-  transform: scale(1.1);
-}
-
+/* Tactile press response for desktop clicks and touch taps */
 .action-card:active {
-  transform: translateY(1px) scale(0.98);
+  transform: translateY(1px) scale(0.99);
   box-shadow: var(--shadow-pressed);
 }
 
@@ -129,7 +135,7 @@
 /* Doctor Catalog Grid & Cards */
 .doctor-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr));
   gap: 22px;
 }
 
@@ -271,7 +277,7 @@
 
 .hospital-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr));
   gap: 24px;
 }
 
@@ -506,3 +512,100 @@
   color: var(--text-main);
   font-weight: 700;
 }
+
+/* ==========================================================================
+   Patient Dashboard Responsive Adaptations
+   ========================================================================== */
+
+@media (max-width: 992px) {
+  .hero {
+    padding: 28px 32px;
+  }
+}
+
+@media (max-width: 768px) {
+  .hero {
+    padding: 22px 20px;
+    border-radius: var(--radius-lg);
+  }
+
+  .hero h1 {
+    font-size: 22px;
+  }
+
+  .hero-art {
+    font-size: 44px;
+  }
+
+  .stats {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 14px;
+  }
+
+  .history-card {
+    padding: 20px 18px;
+  }
+
+  .history-card-head {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .history-actions {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+}
+
+@media (max-width: 576px) {
+  .hero {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 18px 16px;
+  }
+
+  .hero-art {
+    display: none;
+  }
+
+  .hero h1 {
+    font-size: 20px;
+  }
+
+  .stats {
+    grid-template-columns: 1fr;
+  }
+
+  .stat-card {
+    padding: 16px 18px;
+  }
+
+  .stat-card strong {
+    font-size: 26px;
+  }
+
+  .hospital-card {
+    flex-direction: column;
+    padding: 20px 16px;
+    gap: 12px;
+  }
+
+  .hospital-card-heading {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+  }
+
+  .history-grid {
+    grid-template-columns: 1fr;
+    padding: 14px 12px;
+  }
+
+  .detail-list {
+    grid-template-columns: 1fr;
+    padding: 14px 12px;
+  }
+}
+

@@ -19,6 +19,7 @@
 .hosp-filter-group {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 12px;
 }
 
@@ -30,7 +31,8 @@
 }
 
 .hosp-filter-group select {
-  min-width: 240px;
+  min-width: min(240px, 100%);
+  max-width: 100%;
   background-color: var(--surface-inset) !important;
   box-shadow: var(--shadow-inset) !important;
   border: 1px solid var(--border-light) !important;
@@ -183,3 +185,46 @@
     transform: scale(0.98);
   }
 }
+
+/* ==========================================================================
+   Hospital Desk Responsive Adaptations
+   ========================================================================== */
+
+@media (max-width: 768px) {
+  .hosp-desk-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+
+  .hosp-filter-group {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .doctor-schedule-card {
+    padding: 18px 16px;
+    border-radius: var(--radius-md);
+  }
+
+  .day-btn {
+    padding: 6px 10px;
+    font-size: 11px;
+  }
+}
+
+@media (max-width: 480px) {
+  .hosp-desk-toolbar {
+    padding: 12px 14px;
+  }
+
+  .day-btn-group {
+    gap: 6px;
+  }
+
+  .day-btn {
+    padding: 5px 8px;
+    font-size: 10.5px;
+  }
+}
+

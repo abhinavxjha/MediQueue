@@ -161,6 +161,44 @@ function toggleTheme() {
 initTheme();
 document.addEventListener("DOMContentLoaded", initTheme);
 
+// Responsive Mobile Sidebar Toggle
+function toggleSidebar(forceState) {
+  const sidebar = document.querySelector(".sidebar");
+  if (!sidebar) return;
+
+  let backdrop = document.getElementById("sidebarBackdrop");
+  if (!backdrop) {
+    backdrop = document.createElement("div");
+    backdrop.id = "sidebarBackdrop";
+    backdrop.className = "sidebar-backdrop";
+    backdrop.onclick = () => closeSidebar();
+    document.body.appendChild(backdrop);
+  }
+
+  const shouldOpen = typeof forceState === "boolean" ? forceState : !sidebar.classList.contains("open");
+  if (shouldOpen) {
+    sidebar.classList.add("open");
+    backdrop.classList.add("show");
+    document.body.classList.add("sidebar-locked");
+  } else {
+    sidebar.classList.remove("open");
+    backdrop.classList.remove("show");
+    document.body.classList.remove("sidebar-locked");
+  }
+}
+
+function closeSidebar() {
+  toggleSidebar(false);
+}
+
+// Auto-close sidebar when clicking navigation button on mobile
+document.addEventListener("click", (e) => {
+  const navBtn = e.target.closest(".nav-btn");
+  if (navBtn && window.innerWidth < 992) {
+    closeSidebar();
+  }
+});
+
 window.$ = $;
 window.$$ = $$;
 window.esc = esc;
@@ -173,3 +211,6 @@ window.toggleUserMenu = toggleUserMenu;
 window.doLogout = doLogout;
 window.initTheme = initTheme;
 window.toggleTheme = toggleTheme;
+window.toggleSidebar = toggleSidebar;
+window.closeSidebar = closeSidebar;
+

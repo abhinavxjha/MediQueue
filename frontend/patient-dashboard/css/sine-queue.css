@@ -5,12 +5,16 @@
   box-shadow: var(--shadow-raised);
   margin-bottom: 28px;
   transition: background-color 0.3s ease;
+  max-width: 100%;
+  overflow: hidden;
 }
 
 .sine-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
   margin-bottom: 24px;
 }
 
@@ -46,12 +50,15 @@
   font-size: 12px;
   font-weight: 800;
   box-shadow: var(--shadow-raised-sm);
+  white-space: nowrap;
 }
 
 .sine-wave-wrapper {
   position: relative;
   width: 100%;
+  max-width: 100%;
   overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
   padding: 24px 0 36px;
 }
 
@@ -61,6 +68,23 @@
   height: auto;
   display: block;
 }
+
+@media (max-width: 768px) {
+  .sine-queue-card {
+    padding: 20px 18px;
+    border-radius: var(--radius-lg);
+  }
+}
+
+@media (max-width: 576px) {
+  .sine-queue-card {
+    padding: 16px 14px;
+  }
+  .sine-title-wrap h4 {
+    font-size: 16px;
+  }
+}
+
 
 .token-floating-badge {
   position: absolute;

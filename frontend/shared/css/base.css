@@ -315,18 +315,20 @@ input::placeholder, textarea::placeholder {
 }
 
 .section-title {
-  font-size: 19px;
+  font-size: clamp(16px, 2.2vw, 19px);
   font-weight: 800;
   color: var(--text-main);
-  margin: 32px 0 16px;
+  margin: 28px 0 16px;
   display: flex;
   align-items: center;
   gap: 10px;
+  overflow-wrap: break-word;
 }
 
 .section-title i {
   color: var(--primary-blue);
   font-size: 21px;
+  flex-shrink: 0;
 }
 
 .eyebrow {
@@ -352,6 +354,7 @@ input::placeholder, textarea::placeholder {
   font-size: 12px;
   font-weight: 700;
   text-transform: capitalize;
+  white-space: nowrap;
 }
 
 .pill.green {
@@ -392,6 +395,7 @@ input::placeholder, textarea::placeholder {
   box-shadow: var(--shadow-inset);
   letter-spacing: 0.5px;
   display: inline-block;
+  white-space: nowrap;
 }
 
 /* ============================================================
@@ -404,6 +408,8 @@ input::placeholder, textarea::placeholder {
   padding: 6px;
   background: var(--surface-inset);
   overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  max-width: 100%;
 }
 
 .table {
@@ -413,6 +419,7 @@ input::placeholder, textarea::placeholder {
   font-size: 13px;
   background: transparent;
   margin-bottom: 0;
+  min-width: 580px;
 }
 
 .table th {
@@ -424,6 +431,7 @@ input::placeholder, textarea::placeholder {
   letter-spacing: 0.5px;
   padding: 12px 18px;
   border: none;
+  white-space: nowrap;
 }
 
 .table td {
@@ -446,9 +454,11 @@ input::placeholder, textarea::placeholder {
   border-bottom-right-radius: 12px;
 }
 
-.table tbody tr:hover td {
-  background: var(--surface-card);
-  transform: translateY(-1px);
+@media (hover: hover) and (pointer: fine) {
+  .table tbody tr:hover td {
+    background: var(--surface-card);
+    transform: translateY(-1px);
+  }
 }
 
 .table-active-row td {
@@ -461,6 +471,46 @@ input::placeholder, textarea::placeholder {
   flex-wrap: wrap;
 }
 
+/* Responsive Neumorphism adaptations for mobile devices */
+@media (max-width: 768px) {
+  :root {
+    --shadow-raised-lg: 6px 6px 14px rgba(166, 178, 197, 0.5), -6px -6px 14px rgba(255, 255, 255, 0.9);
+    --shadow-raised: 4px 4px 10px rgba(166, 178, 197, 0.45), -4px -4px 10px rgba(255, 255, 255, 0.85);
+    --shadow-raised-hover: 5px 5px 12px rgba(166, 178, 197, 0.55), -5px -5px 12px rgba(255, 255, 255, 0.95);
+    --shadow-inset: inset 2px 2px 4px rgba(166, 178, 197, 0.45), inset -2px -2px 4px rgba(255, 255, 255, 0.8);
+    --shadow-pressed: inset 3px 3px 6px rgba(166, 178, 197, 0.55), inset -3px -3px 6px rgba(255, 255, 255, 0.85);
+  }
+
+  [data-theme="dark"] {
+    --shadow-raised-lg: 6px 6px 14px rgba(0, 0, 0, 0.5), -4px -4px 12px rgba(30, 41, 59, 0.22);
+    --shadow-raised: 4px 4px 10px rgba(0, 0, 0, 0.45), -3px -3px 8px rgba(30, 41, 59, 0.2);
+    --shadow-raised-hover: 5px 5px 12px rgba(0, 0, 0, 0.55), -4px -4px 10px rgba(30, 41, 59, 0.25);
+    --shadow-inset: inset 2px 2px 4px rgba(0, 0, 0, 0.6), inset -2px -2px 4px rgba(30, 41, 59, 0.15);
+    --shadow-pressed: inset 3px 3px 6px rgba(0, 0, 0, 0.65), inset -3px -3px 6px rgba(30, 41, 59, 0.2);
+  }
+
+  .panel {
+    padding: 20px 16px;
+    border-radius: var(--radius-md);
+  }
+}
+
+@media (max-width: 480px) {
+  .panel {
+    padding: 16px 12px;
+  }
+  
+  .table th {
+    padding: 10px 12px;
+    font-size: 10px;
+  }
+  
+  .table td {
+    padding: 12px 12px;
+    font-size: 12px;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *, ::before, ::after {
     animation-duration: 0.01ms !important;
@@ -468,3 +518,4 @@ input::placeholder, textarea::placeholder {
     transition-duration: 0.01ms !important;
   }
 }
+

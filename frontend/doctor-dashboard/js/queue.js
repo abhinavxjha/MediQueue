@@ -4,55 +4,60 @@ function queueTable(rows, isQueue) {
   }
 
   return `
-    <table class="table">
-      <thead>
-        <tr>
-          <th>Token</th>
-          <th>Patient Name</th>
-          <th>Phone</th>
-          <th>Symptoms / Chief Complaint</th>
-          <th>Status</th>
-          <th>Actions</th>
-        </tr>
-      </thead>
-      <tbody>
-        ${rows.map((r) => {
-          const status = r.status || "booked";
-          const isOngoing = status === "called" || status === "ongoing";
-          const isDone = status === "completed";
-          const targetId = r.id || r.queue_id || r.appointment_id;
+    <div class="table-responsive">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Token</th>
+            <th>Patient Name</th>
+            <th>Phone</th>
+            <th>Symptoms / Chief Complaint</th>
+            <th>Status</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${rows.map((r) => {
+            const status = r.status || "booked";
+            const isOngoing = status === "called" || status === "ongoing";
+            const isDone = status === "completed";
+            const targetId = r.id || r.queue_id || r.appointment_id;
 
-          return `
-            <tr class="${isOngoing ? 'table-active-row' : ''}">
-              <td><b class="token-pill">${esc(r.token || r.token_no || "—")}</b></td>
-              <td><b>${esc(r.patient_name || "Patient")}</b></td>
-              <td>${esc(r.patient_phone || "—")}</td>
-              <td><small class="text-muted">${esc(r.symptoms || "Routine Consultation")}</small></td>
-              <td>
-                <span class="pill ${isOngoing ? "purple blinking" : isDone ? "green" : "orange"}">
-                  ${isOngoing ? '<i class="bi bi-broadcast"></i> In Consultation' : esc(status.replace("_", " "))}
-                </span>
-              </td>
-              <td class="appointment-actions">
-                ${!isDone && !isOngoing ? `
-                  <button class="btn btn-sm btn-teal" onclick="markDoctorOngoing(${targetId})">
-                    <i class="bi bi-play-circle me-1"></i> Mark Ongoing
-                  </button>
-                ` : ''}
-                ${isOngoing ? `
-                  <button class="btn btn-sm btn-success" onclick="completePatient(${targetId})">
-                    <i class="bi bi-check-circle-fill me-1"></i> Complete
-                  </button>
-                ` : ''}
-                ${isDone ? `
-                  <span class="text-success small fw-bold"><i class="bi bi-check-all me-1"></i> Completed</span>
-                ` : ''}
-              </td>
-            </tr>
-          `;
-        }).join("")}
-      </tbody>
-    </table>
+            return `
+              <tr class="${isOngoing ? 'table-active-row' : ''}">
+                <td><b class="token-pill">${esc(r.token || r.token_no)}</b></td>
+                <td>
+                  <b>${esc(r.patient_name || r.name)}</b>
+                  ${isOngoing ? '<span class="badge bg-primary ms-2">IN CONSULTATION</span>' : ''}
+                </td>
+                <td>${esc(r.patient_phone || "—")}</td>
+                <td><small class="text-muted">${esc(r.symptoms || "Standard OPD Consultation")}</small></td>
+                <td>
+                  <span class="pill ${status === 'completed' ? 'green' : (status === 'called' ? 'orange blinking' : (status === 'ongoing' ? 'orange' : 'purple'))}">
+                    ${status.replace("_", " ")}
+                  </span>
+                </td>
+                <td>
+                  ${!isDone && !isOngoing ? `
+                    <button class="btn btn-sm btn-teal me-1" onclick="markDoctorOngoing(${targetId})">
+                      <i class="bi bi-play-circle me-1"></i> Start
+                    </button>
+                  ` : ''}
+                  ${isOngoing ? `
+                    <button class="btn btn-sm btn-success" onclick="completePatient(${targetId})">
+                      <i class="bi bi-check-circle-fill me-1"></i> Complete
+                    </button>
+                  ` : ''}
+                  ${isDone ? `
+                    <span class="text-success small fw-bold"><i class="bi bi-check-all me-1"></i> Completed</span>
+                  ` : ''}
+                </td>
+              </tr>
+            `;
+          }).join("")}
+        </tbody>
+      </table>
+    </div>
   `;
 }
 

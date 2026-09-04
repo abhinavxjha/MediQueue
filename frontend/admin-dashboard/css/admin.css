@@ -131,6 +131,44 @@
 }
 
 /* --------------------------------------------------------------------------
+   Hero & Subheading Typography (Design System Harmonized)
+   -------------------------------------------------------------------------- */
+.hero {
+  background: var(--surface);
+  border-radius: var(--radius-lg);
+  padding: 24px 28px;
+  box-shadow: var(--shadow-raised);
+  margin-bottom: 24px;
+}
+
+.hero h1, .hero-title {
+  font-family: var(--font-heading), 'Plus Jakarta Sans', sans-serif;
+  font-size: clamp(19px, 2.4vw, 24px);
+  font-weight: 800;
+  color: var(--text-main);
+  letter-spacing: -0.4px;
+  line-height: 1.25;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.hero-title i {
+  color: var(--primary-blue);
+  font-size: 24px;
+  flex-shrink: 0;
+}
+
+.hero p {
+  color: var(--text-muted);
+  font-size: 13.5px;
+  line-height: 1.55;
+  margin: 6px 0 0;
+  max-width: 720px;
+}
+
+/* --------------------------------------------------------------------------
    Machine Learning Model Cards
    -------------------------------------------------------------------------- */
 .ml-model-box {
@@ -156,12 +194,43 @@
   border: 1px solid var(--border-light);
 }
 
-@media (max-width: 768px) {
+@media (max-width: 992px) {
   .admin-kpi-grid {
-    grid-template-columns: 1fr;
-  }
-  .dept-bar-label {
-    width: 100px;
-    font-size: 12px;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
   }
 }
+
+@media (max-width: 768px) {
+  .hero {
+    padding: 18px 16px;
+  }
+  .hero-title {
+    font-size: 19px;
+  }
+  .admin-kpi-grid {
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+  .dept-bar-label {
+    width: 95px;
+    font-size: 12px;
+  }
+  .dept-bar-item {
+    gap: 10px;
+  }
+}
+
+@media (max-width: 480px) {
+  .hero {
+    padding: 16px 14px;
+  }
+  .dept-bar-label {
+    width: 80px;
+    font-size: 11px;
+  }
+  .admin-kpi-grid .stat-card strong {
+    font-size: 26px;
+  }
+}
+
