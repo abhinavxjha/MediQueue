@@ -1,0 +1,65 @@
+/* Neumorphic Doctor Availability Banner */
+.doctor-avail-banner {
+  background: var(--surface);
+  border-radius: var(--radius-xl);
+  padding: 24px 32px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: var(--shadow-raised);
+  margin-bottom: 28px;
+}
+
+.doctor-avail-info h4 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--text-main);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.doctor-avail-info h4 i {
+  color: var(--primary-blue);
+}
+
+.doctor-avail-info small {
+  color: var(--text-muted);
+  font-size: 13.5px;
+  margin-top: 5px;
+  display: block;
+}
+
+.doctor-queue-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 18px;
+}
+
+.doctor-queue-header span {
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--text-main);
+}
+
+/* Inset Neumorphic Slot Creator Panel */
+.slot-create-panel {
+  background: var(--surface);
+  border-radius: var(--radius-xl);
+  padding: 30px 34px;
+  box-shadow: var(--shadow-raised);
+  margin-bottom: 28px;
+}
+
+.slot-create-panel h5 {
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--text-main);
+}
+
+.consult-modal-textarea {
+  min-height: 85px;
+  font-size: 13.5px;
+}

@@ -1,0 +1,233 @@
+.auth-shell {
+  min-height: 100vh;
+  padding: 40px 6%;
+  background: var(--bg);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  transition: background-color 0.3s ease;
+}
+
+.auth-brand {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 28px;
+}
+
+.auth-brand b {
+  font-size: 28px;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+  color: var(--text-main);
+}
+
+.auth-brand span {
+  display: block;
+  color: var(--primary-blue);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.auth-card {
+  display: grid;
+  grid-template-columns: 1.15fr 1fr;
+  background: var(--surface);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-raised-lg);
+  overflow: hidden;
+  max-width: 1080px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.auth-copy {
+  padding: 60px 52px;
+  background: var(--surface);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  border-right: 2px solid var(--surface-soft);
+}
+
+.auth-copy h1 {
+  font-size: 40px;
+  line-height: 1.18;
+  letter-spacing: -1px;
+  margin: 14px 0 18px;
+  font-weight: 800;
+  color: var(--text-main);
+}
+
+.auth-copy h1 span {
+  color: var(--primary-blue);
+}
+
+.auth-copy p {
+  color: var(--text-muted);
+  font-size: 15px;
+  line-height: 1.65;
+  margin: 0 0 32px;
+}
+
+.auth-points {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.auth-points span {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-main);
+  background: var(--surface-inset);
+  padding: 10px 16px;
+  border-radius: var(--radius-pill);
+  box-shadow: var(--shadow-inset);
+}
+
+.auth-points i {
+  color: var(--primary-blue);
+  font-size: 17px;
+}
+
+.auth-form {
+  padding: 52px 44px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  background: var(--surface);
+}
+
+/* Recessed Inset Tab Track */
+.tabs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  background: var(--surface-inset);
+  padding: 6px;
+  border-radius: var(--radius-pill);
+  box-shadow: var(--shadow-inset);
+  margin-bottom: 28px;
+}
+
+.tabs button {
+  border: none;
+  background: transparent;
+  padding: 11px;
+  border-radius: var(--radius-pill);
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--text-muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: all 0.2s ease;
+}
+
+/* Active Tab: Raised Neumorphic Pill */
+.tabs button.active {
+  background: var(--surface);
+  color: var(--primary-blue);
+  box-shadow: var(--shadow-raised-sm);
+  font-weight: 800;
+}
+
+.auth-form-structure .form-header {
+  margin-bottom: 22px;
+}
+
+.auth-form-structure .form-header h4 {
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--text-main);
+  margin: 0 0 6px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.auth-form-structure .form-header p {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin: 0;
+}
+
+.form-group {
+  margin-bottom: 18px;
+}
+
+.form-group label {
+  display: block;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--text-main);
+  margin-bottom: 7px;
+}
+
+.form-group label i {
+  color: var(--primary-blue);
+  margin-right: 4px;
+}
+
+.input-icon-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.input-icon-wrap input {
+  width: 100%;
+  padding: 13px 18px 13px 44px;
+}
+
+.input-icon-wrap .input-icon {
+  position: absolute;
+  left: 16px;
+  color: var(--text-light);
+  font-size: 17px;
+  pointer-events: none;
+  transition: color 0.2s;
+}
+
+.input-icon-wrap:focus-within .input-icon {
+  color: var(--primary-blue);
+}
+
+.btn-toggle-pwd {
+  position: absolute;
+  right: 12px;
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 6px;
+  display: grid;
+  place-items: center;
+  font-size: 16px;
+}
+
+.btn-toggle-pwd:hover {
+  color: var(--primary-blue);
+}
+
+.form-submit-btn {
+  width: 100%;
+  margin-top: 16px;
+  padding: 14px;
+  font-size: 15px;
+}
+
+@media (max-width: 880px) {
+  .auth-card {
+    grid-template-columns: 1fr;
+  }
+  .auth-copy {
+    display: none;
+  }
+}

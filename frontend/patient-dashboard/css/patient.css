@@ -1,0 +1,508 @@
+/* Neumorphic Patient Hero */
+.hero {
+  background: var(--surface);
+  border-radius: var(--radius-xl);
+  padding: 36px 42px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 32px;
+  box-shadow: var(--shadow-raised);
+  position: relative;
+  overflow: hidden;
+}
+
+.hero h1 {
+  font-size: 30px;
+  font-weight: 800;
+  color: var(--text-main);
+  margin: 0 0 8px;
+}
+
+.hero p {
+  color: var(--text-muted);
+  font-size: 14.5px;
+  margin: 0;
+  max-width: 620px;
+  line-height: 1.6;
+}
+
+.hero-art {
+  font-size: 64px;
+  color: var(--primary-blue);
+  opacity: 0.9;
+  filter: drop-shadow(4px 4px 10px rgba(0,0,0,0.1));
+}
+
+/* Tactile Quick Action Cards */
+.cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 20px;
+  margin-bottom: 32px;
+}
+
+.action-card {
+  background: var(--surface);
+  border-radius: var(--radius-lg);
+  padding: 24px;
+  cursor: pointer;
+  box-shadow: var(--shadow-raised);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  user-select: none;
+}
+
+.action-card i {
+  font-size: 28px;
+  color: var(--primary-blue);
+  transition: transform 0.2s ease;
+}
+
+.action-card h3 {
+  font-size: 17px;
+  font-weight: 800;
+  margin: 0;
+  color: var(--text-main);
+}
+
+.action-card p {
+  font-size: 12.5px;
+  color: var(--text-muted);
+  margin: 0;
+}
+
+.action-card:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-raised-hover);
+}
+
+.action-card:hover i {
+  transform: scale(1.1);
+}
+
+.action-card:active {
+  transform: translateY(1px) scale(0.98);
+  box-shadow: var(--shadow-pressed);
+}
+
+/* Neumorphic Statistic Cards */
+.stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 20px;
+  margin-bottom: 32px;
+}
+
+.stat-card {
+  background: var(--surface);
+  border-radius: var(--radius-lg);
+  padding: 22px 24px;
+  box-shadow: var(--shadow-raised);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.stat-card span {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.stat-card strong {
+  font-size: 32px;
+  font-weight: 800;
+  color: var(--text-main);
+  margin: 10px 0;
+}
+
+.stat-card .trend {
+  font-size: 11.5px;
+  color: var(--primary-blue);
+  font-weight: 700;
+}
+
+/* Doctor Catalog Grid & Cards */
+.doctor-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 22px;
+}
+
+.doctor-card {
+  background: var(--surface);
+  border-radius: var(--radius-lg);
+  padding: 24px;
+  box-shadow: var(--shadow-raised);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.doctor-card:hover {
+  box-shadow: var(--shadow-raised-hover);
+}
+
+.doctor-head {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+}
+
+.doc-avatar {
+  width: 56px;
+  height: 56px;
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  color: var(--primary-blue);
+  display: grid;
+  place-items: center;
+  font-size: 22px;
+  font-weight: 800;
+  box-shadow: var(--shadow-raised-sm);
+  flex-shrink: 0;
+}
+
+.doctor-head h3 {
+  font-size: 16px;
+  font-weight: 800;
+  margin: 0 0 3px;
+  color: var(--text-main);
+}
+
+.doctor-head p {
+  font-size: 12.5px;
+  color: var(--text-muted);
+  margin: 0;
+}
+
+.book {
+  margin-top: 18px;
+  background: var(--surface);
+  color: var(--primary-blue);
+  border: none;
+  border-radius: var(--radius-sm);
+  padding: 11px 16px;
+  font-weight: 700;
+  font-size: 13.5px;
+  cursor: pointer;
+  box-shadow: var(--shadow-raised-sm);
+  text-align: center;
+}
+
+.book:hover {
+  background: var(--primary-blue);
+  color: #ffffff;
+  transform: translateY(-2px);
+  box-shadow: var(--btn-primary-shadow);
+}
+
+.book:active {
+  transform: translateY(1px) scale(0.98);
+  box-shadow: var(--shadow-pressed);
+}
+
+/* Inset Slot List */
+.slot-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  gap: 12px;
+  margin-top: 16px;
+  max-height: 250px;
+  overflow-y: auto;
+  padding: 10px;
+  background: var(--surface-inset);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-inset);
+}
+
+.slot {
+  padding: 11px;
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  border: none;
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--text-main);
+  cursor: pointer;
+  text-align: center;
+  box-shadow: var(--shadow-raised-sm);
+}
+
+.slot:hover:not(.disabled) {
+  color: var(--primary-blue);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-raised);
+}
+
+.slot:active:not(.disabled) {
+  transform: translateY(1px);
+  box-shadow: var(--shadow-pressed);
+}
+
+.slot.disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  box-shadow: none;
+  background: transparent;
+}
+
+/* Hospital Catalog */
+.hospital-toolbar {
+  margin-bottom: 24px;
+}
+
+.hospital-toolbar h2 {
+  font-size: 22px;
+  font-weight: 800;
+  margin: 0 0 4px;
+  color: var(--text-main);
+}
+
+.hospital-toolbar p {
+  color: var(--text-muted);
+  font-size: 14px;
+  margin: 0;
+}
+
+.hospital-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+  gap: 24px;
+}
+
+.hospital-card {
+  background: var(--surface);
+  border-radius: var(--radius-lg);
+  padding: 26px;
+  box-shadow: var(--shadow-raised);
+  display: flex;
+  gap: 18px;
+}
+
+.hospital-icon {
+  font-size: 32px;
+  color: var(--primary-blue);
+}
+
+.hospital-card-body {
+  flex: 1;
+}
+
+.hospital-card-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+.hospital-card-heading h3 {
+  font-size: 17px;
+  font-weight: 800;
+  margin: 0;
+  color: var(--text-main);
+}
+
+.hospital-rating {
+  font-size: 11px;
+  font-weight: 800;
+  background: var(--surface-inset);
+  padding: 4px 10px;
+  border-radius: var(--radius-pill);
+  color: var(--primary-blue);
+  box-shadow: var(--shadow-inset);
+}
+
+.hospital-address {
+  font-size: 12.5px;
+  color: var(--text-muted);
+  margin: 6px 0 12px;
+}
+
+.hospital-meta {
+  display: flex;
+  gap: 14px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--primary-blue);
+  margin-bottom: 14px;
+}
+
+.hospital-departments {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.hospital-departments button {
+  font-size: 11.5px;
+  padding: 5px 11px;
+  border-radius: 8px;
+  box-shadow: var(--shadow-raised-sm);
+}
+
+.hospital-directions {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12.5px;
+  font-weight: 800;
+  color: var(--primary-blue);
+  text-decoration: none;
+  margin-bottom: 8px;
+}
+
+.history-intro {
+  color: var(--text-muted);
+  font-size: 14px;
+  margin-bottom: 24px;
+}
+
+.history-list {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.history-card {
+  background: var(--surface);
+  border-radius: var(--radius-lg);
+  padding: 26px;
+  box-shadow: var(--shadow-raised);
+}
+
+.history-card-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 18px;
+}
+
+.history-card-head h3 {
+  font-size: 18px;
+  font-weight: 800;
+  margin: 2px 0;
+  color: var(--text-main);
+}
+
+.history-card-head p {
+  font-size: 13.5px;
+  color: var(--text-muted);
+  margin: 0;
+}
+
+/* Inset Neumorphic Data Grid in History */
+.history-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+  background: var(--surface-inset);
+  padding: 20px;
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-inset);
+  margin-bottom: 18px;
+}
+
+.history-grid small {
+  display: block;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  margin-bottom: 3px;
+}
+
+.history-grid strong {
+  font-size: 13.5px;
+  color: var(--text-main);
+  font-weight: 700;
+}
+
+.history-followup {
+  background: var(--surface-inset);
+  color: var(--primary-blue);
+  padding: 10px 16px;
+  border-radius: var(--radius-sm);
+  font-size: 12.5px;
+  font-weight: 700;
+  margin-bottom: 18px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  box-shadow: var(--shadow-inset);
+}
+
+.history-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.eslip {
+  padding: 4px;
+}
+
+.eslip .qr {
+  width: 96px;
+  height: 96px;
+  border-radius: 12px;
+  box-shadow: var(--shadow-raised-sm);
+  padding: 4px;
+  background: #ffffff;
+}
+
+.temporary-notice {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--surface-inset);
+  color: var(--status-orange);
+  font-size: 12.5px;
+  font-weight: 700;
+  padding: 12px 18px;
+  border-radius: var(--radius-sm);
+  margin-top: 18px;
+  box-shadow: var(--shadow-inset);
+}
+
+.detail-modal h3 {
+  font-size: 22px;
+  font-weight: 800;
+  margin: 0 0 4px;
+  color: var(--text-main);
+}
+
+.detail-modal p {
+  color: var(--text-muted);
+  font-size: 13.5px;
+  margin: 0 0 18px;
+}
+
+.detail-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 14px;
+  background: var(--surface-inset);
+  padding: 18px;
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-inset);
+  margin-bottom: 18px;
+}
+
+.detail-list small {
+  display: block;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+}
+
+.detail-list strong {
+  font-size: 13.5px;
+  color: var(--text-main);
+  font-weight: 700;
+}

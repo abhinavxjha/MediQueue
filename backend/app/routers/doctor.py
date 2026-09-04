@@ -185,6 +185,10 @@ def complete(queue_id: int, data: ConsultationIn, user=Depends(doc_dep), db: Ses
     if not q or q.doctor_id != d.id:
         q = db.scalar(select(QueueEntry).where(QueueEntry.appointment_id == queue_id))
     if not q:
+        appt = db.get(Appointment, queue_id)
+        if appt and appt.doctor_id == d.id:
+            q = create_queue_entry(db, appt)
+    if not q:
         raise HTTPException(404, 'Queue entry not found')
         
     now = datetime.utcnow()

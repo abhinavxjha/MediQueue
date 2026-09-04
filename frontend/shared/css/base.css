@@ -1,0 +1,470 @@
+:root {
+  /* Pure Neumorphic Light Theme (Soft White + Blue) */
+  --bg: #e8ecf4;
+  --surface: #e8ecf4;
+  --surface-raised: #e8ecf4;
+  --surface-soft: #dfe5f0;
+  --surface-card: #e8ecf4;
+  --surface-inset: #dfe5f0;
+  
+  --primary-blue: #2563eb;
+  --primary-blue-hover: #1d4ed8;
+  --primary-blue-light: rgba(37, 99, 235, 0.12);
+  --primary-blue-soft: #eff6ff;
+  --primary-dark: #1e40af;
+  --accent-cyan: #0284c7;
+
+  --text-main: #1e293b;
+  --text-muted: #64748b;
+  --text-light: #94a3b8;
+  
+  --status-green: #059669;
+  --status-green-bg: #ecfdf5;
+  --status-green-border: #a7f3d0;
+  
+  --status-orange: #d97706;
+  --status-orange-bg: #fffbeb;
+  --status-orange-border: #fde68a;
+
+  --status-red: #e11d48;
+  --status-red-bg: #fff1f2;
+  --status-red-border: #fecdd3;
+
+  --status-purple: #7c3aed;
+  --status-purple-bg: #f5f3ff;
+  --status-purple-border: #ddd6fe;
+
+  --radius-xl: 26px;
+  --radius-lg: 20px;
+  --radius-md: 16px;
+  --radius-sm: 12px;
+  --radius-pill: 9999px;
+
+  /* Neumorphic Dual Shadows (Extruded Surfaces) */
+  --shadow-raised-lg: 10px 10px 24px rgba(166, 178, 197, 0.6), -10px -10px 24px rgba(255, 255, 255, 0.95);
+  --shadow-raised: 6px 6px 16px rgba(166, 178, 197, 0.55), -6px -6px 16px rgba(255, 255, 255, 0.9);
+  --shadow-raised-sm: 3px 3px 8px rgba(166, 178, 197, 0.45), -3px -3px 8px rgba(255, 255, 255, 0.85);
+  --shadow-raised-hover: 8px 8px 20px rgba(166, 178, 197, 0.7), -8px -8px 20px rgba(255, 255, 255, 1);
+  
+  /* Inward / Inset Neumorphism for Input Fields & Recessed Surfaces */
+  --shadow-inset: inset 3px 3px 6px rgba(166, 178, 197, 0.5), inset -3px -3px 6px rgba(255, 255, 255, 0.85);
+  --shadow-inset-focus: inset 3px 3px 6px rgba(166, 178, 197, 0.65), inset -3px -3px 6px rgba(255, 255, 255, 0.95), 0 0 0 3px rgba(37, 99, 235, 0.25);
+  --shadow-pressed: inset 4px 4px 8px rgba(166, 178, 197, 0.65), inset -4px -4px 8px rgba(255, 255, 255, 0.9);
+
+  --btn-primary-shadow: 5px 5px 15px rgba(37, 99, 235, 0.35), -3px -3px 10px rgba(255, 255, 255, 0.8);
+  --btn-primary-pressed: inset 3px 3px 6px rgba(15, 23, 42, 0.4), inset -2px -2px 6px rgba(255, 255, 255, 0.25);
+  --btn-secondary-shadow: 4px 4px 10px rgba(166, 178, 197, 0.5), -4px -4px 10px rgba(255, 255, 255, 0.9);
+
+  /* Compatibility & Semantic Aliases */
+  --primary: var(--primary-blue);
+  --primary-2: var(--accent-cyan);
+  --primary-light: #60a5fa;
+  --green: var(--status-green);
+  --orange: var(--status-orange);
+  --red: var(--status-red);
+  --purple: var(--status-purple);
+  --ink: var(--text-main);
+  --line: rgba(0, 0, 0, 0.06);
+  --border-light: rgba(255, 255, 255, 0.6);
+  --font-heading: 'Plus Jakarta Sans', sans-serif;
+  --transition-fast: 0.18s cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-normal: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+[data-theme="dark"] {
+  /* Dedicated Pitch-Dark Navy Neumorphic Theme */
+  --bg: #0b1120;
+  --surface: #0f172a;
+  --surface-raised: #111b33;
+  --surface-soft: #15223e;
+  --surface-card: #0f172a;
+  --surface-inset: #090e1a;
+
+  --primary-blue: #38bdf8;
+  --primary-blue-hover: #0ea5e9;
+  --primary-blue-light: rgba(56, 189, 248, 0.15);
+  --primary-blue-soft: #082f49;
+  --primary-dark: #0284c7;
+  --accent-cyan: #38bdf8;
+
+  --text-main: #f8fafc;
+  --text-muted: #94a3b8;
+  --text-light: #64748b;
+
+  --status-green: #34d399;
+  --status-green-bg: rgba(52, 211, 153, 0.12);
+  --status-green-border: rgba(52, 211, 153, 0.25);
+
+  --status-orange: #fbbf24;
+  --status-orange-bg: rgba(251, 191, 36, 0.12);
+  --status-orange-border: rgba(251, 191, 36, 0.25);
+
+  --status-red: #f43f5e;
+  --status-red-bg: rgba(244, 63, 94, 0.12);
+  --status-red-border: rgba(244, 63, 94, 0.25);
+
+  --status-purple: #a78bfa;
+  --status-purple-bg: rgba(167, 139, 250, 0.12);
+  --status-purple-border: rgba(167, 139, 250, 0.25);
+
+  --shadow-raised-lg: 10px 10px 26px rgba(0, 0, 0, 0.75), -8px -8px 22px rgba(30, 41, 59, 0.5);
+  --shadow-raised: 6px 6px 18px rgba(0, 0, 0, 0.65), -5px -5px 15px rgba(30, 41, 59, 0.4);
+  --shadow-raised-sm: 3px 3px 9px rgba(0, 0, 0, 0.55), -3px -3px 8px rgba(30, 41, 59, 0.35);
+  --shadow-raised-hover: 8px 8px 22px rgba(0, 0, 0, 0.8), -6px -6px 18px rgba(30, 41, 59, 0.55);
+
+  --shadow-inset: inset 3px 3px 6px rgba(0, 0, 0, 0.75), inset -3px -3px 6px rgba(30, 41, 59, 0.4);
+  --shadow-inset-focus: inset 3px 3px 6px rgba(0, 0, 0, 0.85), inset -3px -3px 6px rgba(30, 41, 59, 0.45), 0 0 0 3px rgba(56, 189, 248, 0.3);
+  --shadow-pressed: inset 4px 4px 8px rgba(0, 0, 0, 0.8), inset -4px -4px 8px rgba(30, 41, 59, 0.45);
+
+  --btn-primary-shadow: 6px 6px 18px rgba(0, 0, 0, 0.7), -4px -4px 12px rgba(56, 189, 248, 0.2);
+  --btn-primary-pressed: inset 3px 3px 6px rgba(0, 0, 0, 0.6), inset -2px -2px 6px rgba(56, 189, 248, 0.25);
+  --btn-secondary-shadow: 4px 4px 10px rgba(0, 0, 0, 0.6), -4px -4px 10px rgba(30, 41, 59, 0.4);
+
+  /* Compatibility & Semantic Aliases */
+  --primary: var(--primary-blue);
+  --primary-2: var(--accent-cyan);
+  --primary-light: #38bdf8;
+  --green: var(--status-green);
+  --orange: var(--status-orange);
+  --red: var(--status-red);
+  --purple: var(--status-purple);
+  --ink: var(--text-main);
+  --line: rgba(255, 255, 255, 0.08);
+  --border-light: rgba(255, 255, 255, 0.08);
+  --font-heading: 'Plus Jakarta Sans', sans-serif;
+  --transition-fast: 0.18s cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-normal: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  color: var(--text-main);
+  font-family: "Plus Jakarta Sans", "Inter", system-ui, -apple-system, sans-serif;
+  background: var(--bg);
+  -webkit-font-smoothing: antialiased;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+button, input, select, textarea {
+  font: inherit;
+}
+
+/* Micro-interaction and tactile transitions */
+button, .nav-btn, .primary-btn, .btn, .book, .slot, .logout, .icon-btn, .close, .action-card, .doctor-card, .hospital-card, .history-card {
+  transition: all 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.hidden {
+  display: none !important;
+}
+
+/* ============================================================
+   NEUMORPHIC BUTTONS (Tactile Raised -> Inset Press Effect)
+   ============================================================ */
+
+.primary-btn {
+  background: var(--primary-blue);
+  color: #ffffff;
+  border: none;
+  border-radius: var(--radius-sm);
+  padding: 12px 22px;
+  font-weight: 700;
+  font-size: 14px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  box-shadow: var(--btn-primary-shadow);
+  user-select: none;
+  text-decoration: none;
+}
+
+.primary-btn:hover {
+  background: var(--primary-blue-hover);
+  color: #ffffff;
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-raised-hover);
+}
+
+.primary-btn:active {
+  transform: translateY(1px) scale(0.98);
+  box-shadow: var(--btn-primary-pressed);
+}
+
+.btn-secondary-neumorphic, .btn-outline-primary, .btn-outline-secondary {
+  background: var(--surface);
+  color: var(--text-main);
+  border: none;
+  border-radius: var(--radius-sm);
+  padding: 9px 16px;
+  font-weight: 600;
+  font-size: 13px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  box-shadow: var(--btn-secondary-shadow);
+}
+
+.btn-secondary-neumorphic:hover, .btn-outline-primary:hover, .btn-outline-secondary:hover {
+  background: var(--surface);
+  color: var(--primary-blue);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-raised-hover);
+}
+
+.btn-secondary-neumorphic:active, .btn-outline-primary:active, .btn-outline-secondary:active {
+  transform: translateY(1px) scale(0.98);
+  box-shadow: var(--shadow-pressed);
+}
+
+.btn-teal, .btn-success {
+  background: var(--primary-blue);
+  color: #fff !important;
+  border: none !important;
+  border-radius: var(--radius-sm);
+  box-shadow: var(--btn-primary-shadow);
+}
+
+.btn-teal:hover, .btn-success:hover {
+  background: var(--primary-blue-hover);
+  color: #fff !important;
+  transform: translateY(-1px);
+}
+
+.btn-teal:active, .btn-success:active {
+  transform: translateY(1px) scale(0.98);
+  box-shadow: var(--btn-primary-pressed);
+}
+
+.btn-outline-danger {
+  background: var(--surface);
+  color: var(--status-red);
+  border: none;
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-raised-sm);
+}
+
+.btn-outline-danger:hover {
+  background: var(--status-red);
+  color: #fff;
+  transform: translateY(-1px);
+}
+
+.btn-outline-danger:active {
+  transform: translateY(1px) scale(0.98);
+  box-shadow: var(--shadow-pressed);
+}
+
+.text-teal {
+  color: var(--primary-blue) !important;
+}
+
+/* ============================================================
+   INWARD / INSET NEUMORPHISM FOR INPUT FIELDS
+   (Pressed into the surface)
+   ============================================================ */
+
+input, select, textarea, .form-control, .form-select-custom {
+  background: var(--surface-inset) !important;
+  color: var(--text-main) !important;
+  border: none !important;
+  border-radius: var(--radius-sm) !important;
+  box-shadow: var(--shadow-inset) !important;
+  padding: 12px 16px;
+  font-size: 13.5px;
+  outline: none !important;
+  transition: all 0.2s ease;
+}
+
+input:hover, select:hover, textarea:hover, .form-control:hover, .form-select-custom:hover {
+  box-shadow: var(--shadow-pressed) !important;
+}
+
+input:focus, select:focus, textarea:focus, .form-control:focus, .form-select-custom:focus {
+  box-shadow: var(--shadow-inset-focus) !important;
+}
+
+input::placeholder, textarea::placeholder {
+  color: var(--text-light);
+}
+
+/* ============================================================
+   NEUMORPHIC PANELS & BOXES (Grouping Data)
+   ============================================================ */
+
+.panel {
+  background: var(--surface);
+  border-radius: var(--radius-lg);
+  border: none;
+  padding: 26px;
+  box-shadow: var(--shadow-raised);
+  margin-bottom: 24px;
+}
+
+.empty {
+  text-align: center;
+  padding: 48px 16px;
+  color: var(--text-muted);
+  font-size: 14px;
+}
+
+.section-title {
+  font-size: 19px;
+  font-weight: 800;
+  color: var(--text-main);
+  margin: 32px 0 16px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.section-title i {
+  color: var(--primary-blue);
+  font-size: 21px;
+}
+
+.eyebrow {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--primary-blue);
+  margin-bottom: 6px;
+}
+
+/* ============================================================
+   PILLS & STATUS BADGES (Soft Inset / Tactile)
+   ============================================================ */
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 14px;
+  border-radius: var(--radius-pill);
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: capitalize;
+}
+
+.pill.green {
+  background: var(--status-green-bg);
+  color: var(--status-green);
+  box-shadow: var(--shadow-raised-sm);
+}
+
+.pill.orange {
+  background: var(--status-orange-bg);
+  color: var(--status-orange);
+  box-shadow: var(--shadow-raised-sm);
+}
+
+.pill.purple {
+  background: var(--status-purple-bg);
+  color: var(--status-purple);
+  box-shadow: var(--shadow-raised-sm);
+}
+
+.pill.blinking {
+  animation: pulse-soft 2s infinite ease-in-out;
+}
+
+@keyframes pulse-soft {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.8; transform: scale(0.97); }
+}
+
+.token-pill {
+  font-family: 'SF Mono', Consolas, monospace;
+  font-size: 13px;
+  font-weight: 700;
+  background: var(--surface-soft);
+  color: var(--primary-blue);
+  padding: 4px 10px;
+  border-radius: 8px;
+  box-shadow: var(--shadow-inset);
+  letter-spacing: 0.5px;
+  display: inline-block;
+}
+
+/* ============================================================
+   NEUMORPHIC DATA TABLES
+   ============================================================ */
+
+.table-responsive {
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-inset);
+  padding: 6px;
+  background: var(--surface-inset);
+  overflow-x: auto;
+}
+
+.table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0 6px;
+  font-size: 13px;
+  background: transparent;
+  margin-bottom: 0;
+}
+
+.table th {
+  background: transparent;
+  color: var(--text-muted);
+  font-weight: 700;
+  text-transform: uppercase;
+  font-size: 11px;
+  letter-spacing: 0.5px;
+  padding: 12px 18px;
+  border: none;
+}
+
+.table td {
+  padding: 16px 18px;
+  background: var(--surface);
+  color: var(--text-main);
+  vertical-align: middle;
+  border: none;
+  box-shadow: var(--shadow-raised-sm);
+  transition: transform 0.15s ease;
+}
+
+.table tbody tr td:first-child {
+  border-top-left-radius: 12px;
+  border-bottom-left-radius: 12px;
+}
+
+.table tbody tr td:last-child {
+  border-top-right-radius: 12px;
+  border-bottom-right-radius: 12px;
+}
+
+.table tbody tr:hover td {
+  background: var(--surface-card);
+  transform: translateY(-1px);
+}
+
+.table-active-row td {
+  background: var(--primary-blue-light) !important;
+}
+
+.appointment-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, ::before, ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

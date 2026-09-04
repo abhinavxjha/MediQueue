@@ -4,9 +4,9 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Querly</title>
+  <title>Querly - Smart OPD Management</title>
   <link rel="icon" type="image/svg+xml"
-    href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' rx='14' fill='%230d9488'/><path d='M32 50 C32 50 10 36 10 22 C10 15 15 10 22 10 C26 10 30 13 32 16 C34 13 38 10 42 10 C49 10 54 15 54 22 C54 36 32 50 32 50Z' fill='white' opacity='0.15'/><polyline points='14,32 22,32 25,23 30,41 34,28 37,34 42,34 50,34' fill='none' stroke='white' stroke-width='4.5' stroke-linecap='round' stroke-linejoin='round'/></svg>" />
+    href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' rx='14' fill='%2308707c'/><path d='M32 50 C32 50 10 36 10 22 C10 15 15 10 22 10 C26 10 30 13 32 16 C34 13 38 10 42 10 C49 10 54 15 54 22 C54 36 32 50 32 50Z' fill='white' opacity='0.15'/><polyline points='14,32 22,32 25,23 30,41 34,28 37,34 42,34 50,34' fill='none' stroke='white' stroke-width='4.5' stroke-linecap='round' stroke-linejoin='round'/></svg>" />
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link
@@ -14,51 +14,68 @@
     rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet" />
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
-  <link rel="stylesheet" href="styles.css" />
+  
+  <!-- Shared Styles -->
+  <link rel="stylesheet" href="shared/css/base.css" />
+  <link rel="stylesheet" href="shared/css/layout.css" />
+  <link rel="stylesheet" href="shared/css/auth.css" />
 </head>
 
 <body>
   <div id="toast" class="toast-box"></div>
+
   <div id="authView" class="auth-shell">
-    <div class="auth-brand">
-      <div class="logo-mark"><i class="bi bi-activity"></i></div>
-      <div><b>Querly</b><span>Book. Check In. Track.</span></div>
-    </div>
-    <div class="auth-card">
-      <div class="auth-copy">
-        <span class="eyebrow">SMART OPD MANAGEMENT</span>
-        <h1>Your OPD visit,<br /><span>without the waiting.</span></h1>
-        <p>
-          Book your slot, receive an E-Slip, check in with QR and track your
-          live queue in real time.
-        </p>
-        <div class="auth-points">
-          <span><i class="bi bi-check-circle-fill"></i> Digital E-Slip</span><span><i
-              class="bi bi-check-circle-fill"></i> Live sine-wave queue</span><span><i
-              class="bi bi-check-circle-fill"></i> Smart wait
-            prediction</span>
+    <div class="d-flex justify-content-between align-items-center mb-4" style="max-width: 1080px; margin: 0 auto; width: 100%;">
+      <div class="auth-brand m-0">
+        <div class="logo-mark"><i class="bi bi-activity"></i></div>
+        <div>
+          <b>Querly</b>
+          <span>Book. Check In. Track. Consult.</span>
         </div>
       </div>
+      <button type="button" class="theme-toggle-btn" onclick="toggleTheme()" aria-label="Toggle Light/Dark Theme">
+        <i class="bi bi-moon-stars-fill"></i>
+      </button>
+    </div>
+
+    <div class="auth-card">
+      <div class="auth-copy">
+        <span class="eyebrow">SMART OPD MANAGEMENT PLATFORM</span>
+        <h1>Your OPD visit,<br /><span>without the waiting.</span></h1>
+        <p>
+          Book doctor slots, receive verified digital E-Slips with QR codes, and track your position on the live sine-wave OPD queue.
+        </p>
+        <div class="auth-points">
+          <span><i class="bi bi-check-circle-fill"></i> Verified Digital E-Slip &amp; QR Check-in</span>
+          <span><i class="bi bi-check-circle-fill"></i> Live Continuous Sine-Wave Queue Tracker</span>
+          <span><i class="bi bi-check-circle-fill"></i> Machine Learning Wait-Time Prediction</span>
+        </div>
+      </div>
+
       <div class="auth-form">
         <div class="tabs">
-          <button class="active" data-auth="login"><i class="bi bi-box-arrow-in-right me-1"></i> Login</button>
-          <button data-auth="register"><i class="bi bi-person-plus me-1"></i> Create account</button>
+          <button id="tabLogin" class="active" data-auth="login">
+            <i class="bi bi-box-arrow-in-right me-1"></i> Sign In
+          </button>
+          <button id="tabRegister" data-auth="register">
+            <i class="bi bi-person-plus me-1"></i> Create Account
+          </button>
         </div>
 
-        <!-- Form Structured Login Form -->
+        <!-- Login Form -->
         <form id="loginForm" class="auth-form-structure">
           <div class="form-header">
-            <h4><i class="bi bi-shield-lock-fill"></i> Sign In to Portal</h4>
-            <p>Select your personnel role and enter your credentials to log in.</p>
+            <h4><i class="bi bi-shield-lock-fill text-teal"></i> Sign In to Portal</h4>
+            <p>Select your role and enter credentials to access your OPD dashboard.</p>
           </div>
 
           <div class="form-group">
-            <label for="loginRole"><i class="bi bi-person-badge"></i> Personnel Role</label>
-            <select id="loginRole" class="form-select-custom" onchange="selectAuthRole(this.value)">
-              <option value="patient">Patient (OPD & E-Slips)</option>
-              <option value="doctor">Doctor (OPD Queue & Consultations)</option>
-              <option value="hospital">Hospital Desk (OPD Console & Timestamps)</option>
+            <label for="loginRole"><i class="bi bi-person-badge"></i> Access Role</label>
+            <select id="loginRole" class="form-select-custom">
+              <option value="patient">Patient (OPD Appointments &amp; Live Queue)</option>
+              <option value="doctor">Doctor (OPD Queue &amp; Consultations)</option>
+              <option value="hospital">Hospital Desk (OPD Console &amp; Timestamps)</option>
+              <option value="admin">Administrator (Analytics &amp; Supervision)</option>
             </select>
           </div>
 
@@ -66,7 +83,7 @@
             <label for="loginEmail"><i class="bi bi-envelope"></i> Email Address</label>
             <div class="input-icon-wrap">
               <i class="bi bi-envelope input-icon"></i>
-              <input id="loginEmail" type="email" placeholder="name@domain.com" required />
+              <input id="loginEmail" type="email" placeholder="name@domain.com" required autocomplete="email" />
             </div>
           </div>
 
@@ -74,27 +91,29 @@
             <label for="loginPassword"><i class="bi bi-lock"></i> Password</label>
             <div class="input-icon-wrap">
               <i class="bi bi-lock input-icon"></i>
-              <input id="loginPassword" type="password" placeholder="••••••••" required />
-              <button type="button" class="btn-toggle-pwd" onclick="togglePasswordVisibility('loginPassword', this)"><i class="bi bi-eye"></i></button>
+              <input id="loginPassword" type="password" placeholder="••••••••" required autocomplete="current-password" />
+              <button type="button" class="btn-toggle-pwd" onclick="togglePasswordVisibility('loginPassword', this)">
+                <i class="bi bi-eye"></i>
+              </button>
             </div>
           </div>
 
           <button class="primary-btn form-submit-btn" type="submit">
-            <i class="bi bi-box-arrow-in-right me-1"></i> Sign In
+            <i class="bi bi-box-arrow-in-right me-1"></i> Sign In to Portal
           </button>
         </form>
 
-        <!-- Form Structured Create Account Form -->
+        <!-- Create Account Form -->
         <form id="registerForm" class="auth-form-structure hidden">
           <div class="form-header">
-            <h4><i class="bi bi-person-plus-fill"></i> Create Personnel Account</h4>
-            <p>Set up your new OPD account and select your personnel access level.</p>
+            <h4><i class="bi bi-person-plus-fill text-teal"></i> Create OPD Account</h4>
+            <p>Set up your new account and select your access role.</p>
           </div>
 
           <div class="form-group">
-            <label for="regRole"><i class="bi bi-person-badge"></i> Personnel Role</label>
-            <select id="regRole" class="form-select-custom" onchange="selectAuthRole(this.value)">
-              <option value="patient">Patient OPD Portal</option>
+            <label for="regRole"><i class="bi bi-person-badge"></i> Access Role</label>
+            <select id="regRole" class="form-select-custom">
+              <option value="patient">Patient Portal</option>
               <option value="doctor">Doctor Consultation Portal</option>
               <option value="hospital">Hospital OPD Desk</option>
             </select>
@@ -104,7 +123,7 @@
             <label for="regName"><i class="bi bi-person"></i> Full Name</label>
             <div class="input-icon-wrap">
               <i class="bi bi-person input-icon"></i>
-              <input id="regName" type="text" placeholder="e.g. Dr. Sarah Jenkins or John Doe" required />
+              <input id="regName" type="text" placeholder="e.g. John Doe or Dr. Sarah Jenkins" required />
             </div>
           </div>
 
@@ -112,7 +131,7 @@
             <label for="regEmail"><i class="bi bi-envelope"></i> Email Address</label>
             <div class="input-icon-wrap">
               <i class="bi bi-envelope input-icon"></i>
-              <input id="regEmail" type="email" placeholder="name@example.com" required />
+              <input id="regEmail" type="email" placeholder="name@example.com" required autocomplete="email" />
             </div>
           </div>
 
@@ -128,8 +147,10 @@
             <label for="regPassword"><i class="bi bi-key"></i> Create Password</label>
             <div class="input-icon-wrap">
               <i class="bi bi-lock input-icon"></i>
-              <input id="regPassword" type="password" placeholder="At least 8 characters" minlength="8" required />
-              <button type="button" class="btn-toggle-pwd" onclick="togglePasswordVisibility('regPassword', this)"><i class="bi bi-eye"></i></button>
+              <input id="regPassword" type="password" placeholder="At least 8 characters" minlength="8" required autocomplete="new-password" />
+              <button type="button" class="btn-toggle-pwd" onclick="togglePasswordVisibility('regPassword', this)">
+                <i class="bi bi-eye"></i>
+              </button>
             </div>
           </div>
 
@@ -140,42 +161,69 @@
       </div>
     </div>
   </div>
-  <div id="appView" class="app-shell hidden">
-    <aside class="sidebar">
-      <div class="brand">
-        <div class="logo-mark small"><i class="bi bi-activity"></i></div>
-        <div><b>Querly</b><small>Book. Check In. Track.</small></div>
-      </div>
-      <nav id="nav"></nav>
-      <div class="emergency">
-        <b>Emergency?</b><span>24×7 Helpline</span><strong>+91 98765 43210</strong>
-      </div>
-      <button class="logout" id="logout">
-        <i class="bi bi-box-arrow-left"></i> Logout
-      </button>
-    </aside>
-    <main class="main">
-      <header>
-        <div class="search">
-          <i class="bi bi-search"></i><input placeholder="Search doctors, departments..." id="globalSearch" /><i
-            class="bi bi-sliders"></i>
-        </div>
-        <div class="profile">
-          <button class="icon-btn">
-            <i class="bi bi-bell"></i><em>3</em>
-          </button>
-          <div class="avatar" id="avatar">Y</div>
-          <div>
-            <b id="userName">Yashika Gupta</b><small id="userRole">Patient</small>
-          </div>
-          <i class="bi bi-chevron-down"></i>
-        </div>
-      </header>
-      <div id="topAppointmentsBanner" class="top-appointments-banner"></div>
-      <section id="content"></section>
-    </main>
-  </div>
-  <script src="app.js"></script>
+
+  <!-- Shared Scripts -->
+  <script src="shared/js/utils.js"></script>
+  <script src="shared/js/api.js"></script>
+  <script src="shared/js/auth.js"></script>
+
+  <script>
+    // Check if already authenticated, and redirect immediately to the user's dashboard
+    (function checkExistingSession() {
+      const token = getToken();
+      const user = getCurrentUser();
+      if (token && user && user.role) {
+        window.location.href = getDashboardPath(user.role);
+      }
+    })();
+
+    // Tab switching
+    document.querySelectorAll(".tabs button").forEach((btn) => {
+      btn.onclick = () => {
+        document.querySelectorAll(".tabs button").forEach((b) => b.classList.remove("active"));
+        btn.classList.add("active");
+        const isLogin = btn.dataset.auth === "login";
+        $("#loginForm").classList.toggle("hidden", !isLogin);
+        $("#registerForm").classList.toggle("hidden", isLogin);
+      };
+    });
+
+    // Handle Login
+    $("#loginForm").onsubmit = async (e) => {
+      e.preventDefault();
+      const email = $("#loginEmail").value.trim();
+      const password = $("#loginPassword").value;
+      try {
+        const user = await loginUser(email, password);
+        toast(`Signed in as ${user.name}`);
+        setTimeout(() => {
+          window.location.href = getDashboardPath(user.role);
+        }, 300);
+      } catch (err) {
+        toast(err.message);
+      }
+    };
+
+    // Handle Registration
+    $("#registerForm").onsubmit = async (e) => {
+      e.preventDefault();
+      const name = $("#regName").value.trim();
+      const email = $("#regEmail").value.trim();
+      const phone = $("#regPhone").value.trim();
+      const role = $("#regRole").value;
+      const password = $("#regPassword").value;
+
+      try {
+        const user = await registerUser({ name, email, phone, role, password });
+        toast(`Account created for ${user.name}`);
+        setTimeout(() => {
+          window.location.href = getDashboardPath(user.role);
+        }, 300);
+      } catch (err) {
+        toast(err.message);
+      }
+    };
+  </script>
 </body>
 
 </html>

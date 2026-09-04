@@ -254,9 +254,22 @@ MediQueue/
 │           └── ml.py
 │
 ├── frontend/
-│   ├── index.html
-│   ├── styles.css
-│   └── app.js
+│   ├── index.html                  # Landing Portal & Role Router
+│   ├── shared/                     # Centralized Shared Utilities
+│   │   ├── css/                    # base.css, layout.css, auth.css
+│   │   └── js/                     # api.js, auth.js, utils.js
+│   ├── patient-dashboard/          # Patient OPD Portal
+│   │   ├── index.html
+│   │   ├── css/                    # patient.css, sine-queue.css
+│   │   └── js/                     # patient.js, booking.js, sine-wave.js, history.js, profile.js
+│   ├── doctor-dashboard/           # Doctor OPD Portal
+│   │   ├── index.html
+│   │   ├── css/                    # doctor.css
+│   │   └── js/                     # doctor.js, queue.js, slots.js, profile.js
+│   └── admin-dashboard/            # Admin & Hospital Console
+│       ├── index.html
+│       ├── css/                    # admin.css, hospital.css
+│       └── js/                     # admin.js, hospital.js, schedule.js, doctors.js, analytics.js, appointments.js
 │
 ├── sql/
 │   └── schema.sql
@@ -673,8 +686,10 @@ You should have:
 
 ```text
 index.html
-styles.css
-app.js
+patient-dashboard
+doctor-dashboard
+admin-dashboard
+shared
 ```
 
 Start the frontend server:
@@ -1089,8 +1104,10 @@ You should see:
 
 ```text
 index.html
-styles.css
-app.js
+patient-dashboard
+doctor-dashboard
+admin-dashboard
+shared
 ```
 
 Then run:
