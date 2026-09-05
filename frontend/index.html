@@ -33,9 +33,15 @@
           <span>Book. Check In. Track. Consult.</span>
         </div>
       </div>
-      <button type="button" class="theme-toggle-btn" onclick="toggleTheme()" aria-label="Toggle Light/Dark Theme">
-        <i class="bi bi-moon-stars-fill"></i>
-      </button>
+      <div class="d-flex align-items-center gap-2">
+        <button type="button" class="server-status-pill" onclick="openServerConfigModal()" title="Configure backend server connection">
+          <span class="server-dot connected"></span>
+          <span>Checking API...</span>
+        </button>
+        <button type="button" class="theme-toggle-btn" onclick="toggleTheme()" aria-label="Toggle Light/Dark Theme">
+          <i class="bi bi-moon-stars-fill"></i>
+        </button>
+      </div>
     </div>
 
     <div class="auth-card">
@@ -158,6 +164,25 @@
             <i class="bi bi-person-check-fill me-1"></i> Create Account
           </button>
         </form>
+
+        <!-- Quick Demo Mode Access -->
+        <div class="demo-login-box">
+          <span class="demo-title"><i class="bi bi-lightning-charge-fill text-warning me-1"></i> Quick Test (Instant Offline Demo)</span>
+          <div class="demo-btn-grid">
+            <button type="button" class="demo-role-btn" onclick="quickDemoLogin('patient')">
+              <i class="bi bi-person text-teal"></i> Patient Portal
+            </button>
+            <button type="button" class="demo-role-btn" onclick="quickDemoLogin('doctor')">
+              <i class="bi bi-person-badge text-teal"></i> Doctor Desk
+            </button>
+            <button type="button" class="demo-role-btn" onclick="quickDemoLogin('hospital')">
+              <i class="bi bi-hospital text-teal"></i> Hospital Desk
+            </button>
+            <button type="button" class="demo-role-btn" onclick="quickDemoLogin('admin')">
+              <i class="bi bi-speedometer text-teal"></i> Administrator
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -177,30 +202,56 @@
       }
     })();
 
-    // Tab switching
+    // Tab switching with smooth cross-fade animation
     document.querySelectorAll(".tabs button").forEach((btn) => {
       btn.onclick = () => {
         document.querySelectorAll(".tabs button").forEach((b) => b.classList.remove("active"));
         btn.classList.add("active");
         const isLogin = btn.dataset.auth === "login";
-        $("#loginForm").classList.toggle("hidden", !isLogin);
-        $("#registerForm").classList.toggle("hidden", isLogin);
+        const targetForm = isLogin ? $("#loginForm") : $("#registerForm");
+        const otherForm = isLogin ? $("#registerForm") : $("#loginForm");
+        
+        otherForm.classList.add("hidden");
+        targetForm.classList.remove("hidden");
+        targetForm.classList.remove("view-transition-enter");
+        void targetForm.offsetWidth; // trigger reflow for smooth animation
+        targetForm.classList.add("view-transition-enter");
       };
     });
+
+    // Handle Quick Demo Login
+    async function quickDemoLogin(role) {
+      try {
+        const user = await loginAsDemo(role);
+        toast(`Signed in as ${user.name} (${role.toUpperCase()} Demo)`);
+        setTimeout(() => {
+          window.location.href = getDashboardPath(user.role);
+        }, 250);
+      } catch (err) {
+        toast(err.message);
+      }
+    }
 
     // Handle Login
     $("#loginForm").onsubmit = async (e) => {
       e.preventDefault();
       const email = $("#loginEmail").value.trim();
       const password = $("#loginPassword").value;
+      const role = $("#loginRole").value;
       try {
-        const user = await loginUser(email, password);
+        const user = await loginUser(email, password, role);
         toast(`Signed in as ${user.name}`);
         setTimeout(() => {
           window.location.href = getDashboardPath(user.role);
-        }, 300);
+        }, 250);
       } catch (err) {
         toast(err.message);
+        // If network or mixed content error, prompt server settings after brief delay
+        if (err.message.includes("Cannot connect") || err.message.includes("Mixed Content")) {
+          setTimeout(() => {
+            openServerConfigModal();
+          }, 1200);
+        }
       }
     };
 
@@ -218,9 +269,14 @@
         toast(`Account created for ${user.name}`);
         setTimeout(() => {
           window.location.href = getDashboardPath(user.role);
-        }, 300);
+        }, 250);
       } catch (err) {
         toast(err.message);
+        if (err.message.includes("Cannot connect") || err.message.includes("Mixed Content")) {
+          setTimeout(() => {
+            openServerConfigModal();
+          }, 1200);
+        }
       }
     };
   </script>

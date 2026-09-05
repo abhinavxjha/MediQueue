@@ -7,7 +7,11 @@ function setActivePage(page, departmentId = null) {
   activePage = page;
   selectedDepartmentId = departmentId;
   renderNav();
-  renderPatientView();
+  if (window.smoothSwitchView) {
+    smoothSwitchView($("#content"), renderPatientView);
+  } else {
+    renderPatientView();
+  }
 }
 
 function renderNav() {
@@ -127,7 +131,19 @@ async function renderPatientView() {
   const c = $("#content");
   if (!c) return;
 
-  c.innerHTML = '<div class="empty">Loading patient portal...</div>';
+  const demoBannerHTML = (window.isDemoMode && window.isDemoMode()) ? `
+    <div class="demo-banner">
+      <div>
+        <b><i class="bi bi-laptop me-1"></i> Interactive Offline Demo Mode</b>
+        <span class="ms-2">Currently simulating live OPD features with sample data.</span>
+      </div>
+      <button class="btn btn-sm btn-outline-primary" style="background:var(--surface)" onclick="openServerConfigModal()">
+        <i class="bi bi-hdd-network me-1"></i> Configure Backend Server
+      </button>
+    </div>
+  ` : '';
+
+  c.innerHTML = `${demoBannerHTML}<div class="empty">Loading patient portal...</div>`;
 
   try {
     if (activePage === "dashboard") {
@@ -138,6 +154,7 @@ async function renderPatientView() {
       const queue = next ? await api("/patient/queue/" + next.id) : null;
 
       c.innerHTML = `
+        ${demoBannerHTML}
         <div class="hero">
           <div>
             <h1>Good Day, ${esc(d.patient.name)}! 👋</h1>

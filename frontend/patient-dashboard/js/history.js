@@ -268,7 +268,21 @@ async function openSlip(id) {
 
 async function downloadSlip(id) {
   try {
-    const response = await fetch(API_BASE + `/slips/${id}/pdf`, {
+    if (window.isDemoMode && window.isDemoMode()) {
+      // Offline demo fallback slip
+      const slipContent = `Querly Smart OPD E-Slip\nAppointment #${id}\nStatus: Verified\nDate: ${new Date().toLocaleDateString()}\nKeep this digital slip for your OPD visit.`;
+      const blob = new Blob([slipContent], { type: "text/plain" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `querly-eslip-${id}.txt`;
+      link.click();
+      URL.revokeObjectURL(url);
+      return toast("Downloaded E-Slip (Demo Mode)");
+    }
+
+    const base = window.getApiBase ? window.getApiBase() : API_BASE;
+    const response = await fetch(`${base}/slips/${id}/pdf`, {
       headers: { Authorization: `Bearer ${getToken()}` },
     });
     if (!response.ok) return toast("Could not download E-Slip");
@@ -291,8 +305,8 @@ async function openReport(id) {
       <button class="close" onclick="closeModal()">×</button>
       <div class="detail-modal">
         <span class="eyebrow">CONSULTATION REPORT</span>
-        <h3>${esc(report.doctor)}</h3>
-        <p>${esc(report.specialization)} · ${esc(report.hospital)}</p>
+        <h3>${esc(report.doctor || "Dr. Consultation")}</h3>
+        <p>${esc(report.specialization || "General")} · ${esc(report.hospital || "OPD Clinic")}</p>
         <div class="detail-list">
           <div><small>Symptoms</small><strong>${esc(report.symptoms || "Not provided")}</strong></div>
           <div><small>Diagnosis</small><strong>${esc(report.diagnosis || "Not recorded")}</strong></div>
@@ -312,7 +326,20 @@ async function openReport(id) {
 
 async function downloadReport(id) {
   try {
-    const response = await fetch(API_BASE + `/slips/${id}/report.pdf`, {
+    if (window.isDemoMode && window.isDemoMode()) {
+      const reportContent = `Querly Medical Consultation Report\nConsultation #${id}\nDate: ${new Date().toLocaleDateString()}\nPrescription: General hydration & follow-up.`;
+      const blob = new Blob([reportContent], { type: "text/plain" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `querly-report-${id}.txt`;
+      link.click();
+      URL.revokeObjectURL(url);
+      return toast("Downloaded Consultation Report (Demo Mode)");
+    }
+
+    const base = window.getApiBase ? window.getApiBase() : API_BASE;
+    const response = await fetch(`${base}/slips/${id}/report.pdf`, {
       headers: { Authorization: `Bearer ${getToken()}` },
     });
     if (!response.ok) return toast("Could not download report");

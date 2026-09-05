@@ -5,7 +5,11 @@ let searchDebounceTimer = null;
 function setActivePage(page) {
   activePage = page;
   renderNav();
-  renderAdminView();
+  if (window.smoothSwitchView) {
+    smoothSwitchView($("#content"), renderAdminView);
+  } else {
+    renderAdminView();
+  }
 }
 
 function renderNav() {
@@ -96,6 +100,18 @@ async function renderAdminView() {
   const c = $("#content");
   if (!c) return;
 
+  const demoBannerHTML = (window.isDemoMode && window.isDemoMode()) ? `
+    <div class="demo-banner">
+      <div>
+        <b><i class="bi bi-laptop me-1"></i> Interactive Offline Demo Mode (Hospital Admin)</b>
+        <span class="ms-2">Simulating executive hospital throughput and doctor catalogs.</span>
+      </div>
+      <button class="btn btn-sm btn-outline-primary" style="background:var(--surface)" onclick="openServerConfigModal()">
+        <i class="bi bi-hdd-network me-1"></i> Configure Backend Server
+      </button>
+    </div>
+  ` : '';
+
   if (activePage === "dashboard") {
     await renderAnalytics(c);
   } else if (activePage === "hospital_desk") {
@@ -110,6 +126,12 @@ async function renderAdminView() {
     await renderAnalytics(c);
   } else if (activePage === "appointments") {
     await renderAdminAppointments(c);
+  }
+
+  if (demoBannerHTML && c.firstChild) {
+    const bannerWrapper = document.createElement("div");
+    bannerWrapper.innerHTML = demoBannerHTML;
+    c.insertBefore(bannerWrapper.firstElementChild, c.firstChild);
   }
 }
 

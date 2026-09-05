@@ -40,20 +40,24 @@
   --radius-sm: 12px;
   --radius-pill: 9999px;
 
-  /* Neumorphic Dual Shadows (Extruded Surfaces) */
-  --shadow-raised-lg: 10px 10px 24px rgba(166, 178, 197, 0.6), -10px -10px 24px rgba(255, 255, 255, 0.95);
-  --shadow-raised: 6px 6px 16px rgba(166, 178, 197, 0.55), -6px -6px 16px rgba(255, 255, 255, 0.9);
-  --shadow-raised-sm: 3px 3px 8px rgba(166, 178, 197, 0.45), -3px -3px 8px rgba(255, 255, 255, 0.85);
-  --shadow-raised-hover: 8px 8px 20px rgba(166, 178, 197, 0.7), -8px -8px 20px rgba(255, 255, 255, 1);
+  /* Neumorphic Dual Shadows (Extruded Surfaces) - Compact, Crisp & Less Scattered */
+  --shadow-raised-lg: 4px 6px 14px rgba(150, 165, 185, 0.35), -3px -3px 9px rgba(255, 255, 255, 0.85);
+  --shadow-raised: 3px 4px 9px rgba(150, 165, 185, 0.32), -2px -2px 7px rgba(255, 255, 255, 0.8);
+  --shadow-raised-sm: 2px 2px 5px rgba(150, 165, 185, 0.25), -1px -1px 4px rgba(255, 255, 255, 0.75);
+  --shadow-raised-hover: 4px 6px 12px rgba(150, 165, 185, 0.38), -3px -3px 9px rgba(255, 255, 255, 0.9);
   
   /* Inward / Inset Neumorphism for Input Fields & Recessed Surfaces */
-  --shadow-inset: inset 3px 3px 6px rgba(166, 178, 197, 0.5), inset -3px -3px 6px rgba(255, 255, 255, 0.85);
-  --shadow-inset-focus: inset 3px 3px 6px rgba(166, 178, 197, 0.65), inset -3px -3px 6px rgba(255, 255, 255, 0.95), 0 0 0 3px rgba(37, 99, 235, 0.25);
-  --shadow-pressed: inset 4px 4px 8px rgba(166, 178, 197, 0.65), inset -4px -4px 8px rgba(255, 255, 255, 0.9);
+  --shadow-inset: inset 2px 2px 4px rgba(150, 165, 185, 0.26), inset -2px -2px 4px rgba(255, 255, 255, 0.75);
+  --shadow-inset-focus: inset 2px 2px 4px rgba(150, 165, 185, 0.35), inset -2px -2px 4px rgba(255, 255, 255, 0.85), 0 0 0 3px rgba(37, 99, 235, 0.2);
+  --shadow-pressed: inset 2px 2px 5px rgba(150, 165, 185, 0.32), inset -2px -2px 5px rgba(255, 255, 255, 0.8);
 
-  --btn-primary-shadow: 5px 5px 15px rgba(37, 99, 235, 0.35), -3px -3px 10px rgba(255, 255, 255, 0.8);
-  --btn-primary-pressed: inset 3px 3px 6px rgba(15, 23, 42, 0.4), inset -2px -2px 6px rgba(255, 255, 255, 0.25);
-  --btn-secondary-shadow: 4px 4px 10px rgba(166, 178, 197, 0.5), -4px -4px 10px rgba(255, 255, 255, 0.9);
+  --btn-primary-shadow: 3px 4px 10px rgba(37, 99, 235, 0.28), -2px -2px 6px rgba(255, 255, 255, 0.7);
+  --btn-primary-pressed: inset 2px 2px 5px rgba(15, 23, 42, 0.35), inset -1px -1px 4px rgba(255, 255, 255, 0.2);
+  --btn-secondary-shadow: 2px 3px 7px rgba(150, 165, 185, 0.3), -2px -2px 6px rgba(255, 255, 255, 0.8);
+
+  /* Micro-Border Boundary for crisp geometric definition */
+  --panel-border: 1px solid rgba(0, 0, 0, 0.05);
+  --card-border: 1px solid rgba(0, 0, 0, 0.04);
 
   /* Compatibility & Semantic Aliases */
   --primary: var(--primary-blue);
@@ -64,7 +68,7 @@
   --red: var(--status-red);
   --purple: var(--status-purple);
   --ink: var(--text-main);
-  --line: rgba(0, 0, 0, 0.06);
+  --line: rgba(0, 0, 0, 0.08);
   --border-light: rgba(255, 255, 255, 0.6);
   --font-heading: 'Plus Jakarta Sans', sans-serif;
   --transition-fast: 0.18s cubic-bezier(0.4, 0, 0.2, 1);
@@ -107,18 +111,22 @@
   --status-purple-bg: rgba(167, 139, 250, 0.12);
   --status-purple-border: rgba(167, 139, 250, 0.25);
 
-  --shadow-raised-lg: 10px 10px 26px rgba(0, 0, 0, 0.75), -8px -8px 22px rgba(30, 41, 59, 0.5);
-  --shadow-raised: 6px 6px 18px rgba(0, 0, 0, 0.65), -5px -5px 15px rgba(30, 41, 59, 0.4);
-  --shadow-raised-sm: 3px 3px 9px rgba(0, 0, 0, 0.55), -3px -3px 8px rgba(30, 41, 59, 0.35);
-  --shadow-raised-hover: 8px 8px 22px rgba(0, 0, 0, 0.8), -6px -6px 18px rgba(30, 41, 59, 0.55);
+  --shadow-raised-lg: 4px 5px 14px rgba(0, 0, 0, 0.55), -2px -2px 8px rgba(255, 255, 255, 0.04);
+  --shadow-raised: 3px 3px 8px rgba(0, 0, 0, 0.45), -2px -2px 6px rgba(255, 255, 255, 0.03);
+  --shadow-raised-sm: 2px 2px 5px rgba(0, 0, 0, 0.4), -1px -1px 4px rgba(255, 255, 255, 0.02);
+  --shadow-raised-hover: 4px 5px 12px rgba(0, 0, 0, 0.55), -2px -2px 8px rgba(255, 255, 255, 0.05);
 
-  --shadow-inset: inset 3px 3px 6px rgba(0, 0, 0, 0.75), inset -3px -3px 6px rgba(30, 41, 59, 0.4);
-  --shadow-inset-focus: inset 3px 3px 6px rgba(0, 0, 0, 0.85), inset -3px -3px 6px rgba(30, 41, 59, 0.45), 0 0 0 3px rgba(56, 189, 248, 0.3);
-  --shadow-pressed: inset 4px 4px 8px rgba(0, 0, 0, 0.8), inset -4px -4px 8px rgba(30, 41, 59, 0.45);
+  --shadow-inset: inset 2px 2px 4px rgba(0, 0, 0, 0.5), inset -1px -1px 4px rgba(255, 255, 255, 0.03);
+  --shadow-inset-focus: inset 2px 2px 4px rgba(0, 0, 0, 0.6), inset -1px -1px 4px rgba(255, 255, 255, 0.04), 0 0 0 3px rgba(56, 189, 248, 0.25);
+  --shadow-pressed: inset 3px 3px 6px rgba(0, 0, 0, 0.55), inset -2px -2px 6px rgba(255, 255, 255, 0.04);
 
-  --btn-primary-shadow: 6px 6px 18px rgba(0, 0, 0, 0.7), -4px -4px 12px rgba(56, 189, 248, 0.2);
-  --btn-primary-pressed: inset 3px 3px 6px rgba(0, 0, 0, 0.6), inset -2px -2px 6px rgba(56, 189, 248, 0.25);
-  --btn-secondary-shadow: 4px 4px 10px rgba(0, 0, 0, 0.6), -4px -4px 10px rgba(30, 41, 59, 0.4);
+  --btn-primary-shadow: 3px 4px 12px rgba(0, 0, 0, 0.5), -2px -2px 8px rgba(56, 189, 248, 0.15);
+  --btn-primary-pressed: inset 2px 2px 5px rgba(0, 0, 0, 0.5), inset -1px -1px 4px rgba(56, 189, 248, 0.2);
+  --btn-secondary-shadow: 2px 3px 6px rgba(0, 0, 0, 0.4), -2px -2px 6px rgba(30, 41, 59, 0.3);
+
+  /* Micro-Border Boundary for dark mode */
+  --panel-border: 1px solid rgba(255, 255, 255, 0.07);
+  --card-border: 1px solid rgba(255, 255, 255, 0.06);
 
   /* Compatibility & Semantic Aliases */
   --primary: var(--primary-blue);
@@ -301,10 +309,128 @@ input::placeholder, textarea::placeholder {
 .panel {
   background: var(--surface);
   border-radius: var(--radius-lg);
-  border: none;
+  border: var(--panel-border);
   padding: 26px;
   box-shadow: var(--shadow-raised);
   margin-bottom: 24px;
+}
+
+/* ============================================================
+   SMOOTH TRANSITIONS & KEYFRAME ANIMATIONS
+   ============================================================ */
+@keyframes smoothViewFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes smoothViewFadeOut {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+}
+
+@keyframes smoothPageEnter {
+  from {
+    opacity: 0;
+    transform: scale(0.994) translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+@keyframes modalFadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.96) translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+@keyframes modalFadeOut {
+  from {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: scale(0.96) translateY(10px);
+  }
+}
+
+.view-transition-enter {
+  animation: smoothViewFadeIn 0.28s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.view-transition-exit {
+  animation: smoothViewFadeOut 0.16s cubic-bezier(0.4, 0, 1, 1) forwards;
+}
+
+.page-smooth-enter {
+  animation: smoothPageEnter 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Responsive Neumorphism adaptations for mobile devices */
+@media (max-width: 768px) {
+  :root {
+    --shadow-raised-lg: 3px 4px 10px rgba(150, 165, 185, 0.3), -2px -2px 6px rgba(255, 255, 255, 0.8);
+    --shadow-raised: 2px 3px 6px rgba(150, 165, 185, 0.28), -1px -1px 4px rgba(255, 255, 255, 0.75);
+    --shadow-raised-hover: 3px 4px 8px rgba(150, 165, 185, 0.35), -2px -2px 6px rgba(255, 255, 255, 0.85);
+    --shadow-inset: inset 2px 2px 3px rgba(150, 165, 185, 0.25), inset -1px -1px 3px rgba(255, 255, 255, 0.7);
+    --shadow-pressed: inset 2px 2px 4px rgba(150, 165, 185, 0.3), inset -1px -1px 4px rgba(255, 255, 255, 0.75);
+  }
+
+  [data-theme="dark"] {
+    --shadow-raised-lg: 3px 4px 10px rgba(0, 0, 0, 0.45), -2px -2px 6px rgba(255, 255, 255, 0.03);
+    --shadow-raised: 2px 3px 6px rgba(0, 0, 0, 0.4), -1px -1px 4px rgba(255, 255, 255, 0.02);
+    --shadow-raised-hover: 3px 4px 8px rgba(0, 0, 0, 0.48), -2px -2px 6px rgba(255, 255, 255, 0.04);
+    --shadow-inset: inset 2px 2px 3px rgba(0, 0, 0, 0.45), inset -1px -1px 3px rgba(255, 255, 255, 0.02);
+    --shadow-pressed: inset 2px 2px 4px rgba(0, 0, 0, 0.5), inset -1px -1px 4px rgba(255, 255, 255, 0.03);
+  }
+
+  .panel {
+    padding: 20px 16px;
+    border-radius: var(--radius-md);
+  }
+}
+
+@media (max-width: 480px) {
+  .panel {
+    padding: 16px 12px;
+  }
+  
+  .table th {
+    padding: 10px 12px;
+    font-size: 10px;
+  }
+  
+  .table td {
+    padding: 12px 12px;
+    font-size: 12px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, ::before, ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }
 
 .empty {

@@ -10,9 +10,11 @@ app = FastAPI(title='Querly API', version='1.0.0', description='Smart OPD Appoin
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
+    allow_origin_regex=".*",
     allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
+    expose_headers=["*"],
 )
 
 Base.metadata.create_all(bind=engine)

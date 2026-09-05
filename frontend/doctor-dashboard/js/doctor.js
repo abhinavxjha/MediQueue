@@ -5,7 +5,11 @@ let searchDebounceTimer = null;
 function setActivePage(page) {
   activePage = page;
   renderNav();
-  renderDoctorView();
+  if (window.smoothSwitchView) {
+    smoothSwitchView($("#content"), renderDoctorView);
+  } else {
+    renderDoctorView();
+  }
 }
 
 function renderNav() {
@@ -102,7 +106,19 @@ async function renderDoctorView() {
   const c = $("#content");
   if (!c) return;
 
-  c.innerHTML = '<div class="empty">Loading doctor OPD portal...</div>';
+  const demoBannerHTML = (window.isDemoMode && window.isDemoMode()) ? `
+    <div class="demo-banner">
+      <div>
+        <b><i class="bi bi-laptop me-1"></i> Interactive Offline Demo Mode (Doctor Desk)</b>
+        <span class="ms-2">Simulating doctor consultation queue and patient roster.</span>
+      </div>
+      <button class="btn btn-sm btn-outline-primary" style="background:var(--surface)" onclick="openServerConfigModal()">
+        <i class="bi bi-hdd-network me-1"></i> Configure Backend Server
+      </button>
+    </div>
+  ` : '';
+
+  c.innerHTML = `${demoBannerHTML}<div class="empty">Loading doctor OPD portal...</div>`;
 
   try {
     if (activePage === "dashboard") {
@@ -120,6 +136,7 @@ async function renderDoctorView() {
       }
 
       c.innerHTML = `
+        ${demoBannerHTML}
         <div class="doctor-avail-banner">
           <div class="doctor-avail-info">
             <h4><i class="bi bi-person-badge me-2"></i>Dr. ${esc(d.doctor.name)}</h4>
